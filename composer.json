@@ -1,0 +1,74 @@
+{
+    "name": "koh/sylius-acp",
+    "description": "Agentic Commerce Protocol discovery for Sylius",
+    "type": "sylius-bundle",
+    "license": "MIT",
+    "keywords": [
+        "sylius",
+        " /.well-known/acp.json and a read-only product feed for agents.:acp",
+        "agentic-commerce",
+        "feed",
+        "agent"
+    ],
+    "authors": [
+        {
+            "name": "Kai Ole Hartwig",
+            "email": "mail@ole-hartwig.eu"
+        }
+    ],
+    "homepage": "https://ole-hartwig.eu/open-source/sylius-agent-ready",
+    "support": {
+        "issues": "https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/-/issues",
+        "source": "https://github.com/ole-hartwig/sylius-acp"
+    },
+    "require": {
+        "koh/sylius-agent-contracts": "^1.1",
+        "php": "^8.2",
+        "sylius/sylius": "^2.0",
+        "symfony/config": "^7.4 || ^8.0",
+        "symfony/dependency-injection": "^7.4 || ^8.0",
+        "symfony/http-foundation": "^7.4 || ^8.0",
+        "symfony/http-kernel": "^7.4 || ^8.0",
+        "symfony/routing": "^7.4 || ^8.0",
+        "symfony/serializer": "^7.4 || ^8.0"
+    },
+    "require-dev": {
+        "doctrine/collections": "^2.6",
+        "phpstan/extension-installer": "^1.4",
+        "phpstan/phpstan": "^2.0",
+        "phpstan/phpstan-doctrine": "^2.0",
+        "phpunit/phpunit": "^11.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Koh\\SyliusAcp\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Koh\\SyliusAcp\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "1.0-dev"
+        }
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "phpstan/extension-installer": true
+        }
+    },
+    "repositories": [
+        {
+            "type": "composer",
+            "url": "https://git.ole-hartwig.eu/api/v4/group/1091/-/packages/composer/packages.json",
+            "only": [
+                "koh/*"
+            ]
+        }
+    ],
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
