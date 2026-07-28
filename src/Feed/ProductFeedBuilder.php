@@ -39,7 +39,12 @@ final class ProductFeedBuilder
      */
     public function build(AgentContext $context, int $page = 1, ?int $limit = null): array
     {
-        $limit = min($limit ?? $this->defaultLimit, $this->maxLimit);
+        // Clamp on both ends. min() alone leaves the lower bound open, and the
+        // limit comes straight off the query string: `?limit=-1` would survive
+        // as -1, reach the repository as a negative max-result — which Doctrine
+        // reads as "no limit" — and hand out the entire catalogue from a public,
+        // unauthenticated route, with max_limit silently bypassed.
+        $limit = max(1, min($limit ?? $this->defaultLimit, $this->maxLimit));
         $page = max(1, $page);
 
         // Fetch page+1 worth so the caller can be told there is more without a

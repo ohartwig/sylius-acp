@@ -100,6 +100,22 @@ final class AcpTest extends TestCase
         self::assertSame(500, $this->feed(limit: 100000)['limit']);
     }
 
+    /**
+     * The cap has to hold at the bottom too. A negative limit reaches the
+     * repository as a negative max-result, which Doctrine reads as "no limit" —
+     * so `?limit=-1` would walk straight past max_limit and return the whole
+     * catalogue from a route that needs no credentials.
+     */
+    public function testNegativeLimitCannotBypassTheCap(): void
+    {
+        self::assertSame(1, $this->feed(limit: -1)['limit']);
+    }
+
+    public function testZeroLimitIsRaisedToAWorkingPage(): void
+    {
+        self::assertSame(1, $this->feed(limit: 0)['limit']);
+    }
+
     /** @return array<string, mixed> */
     private function discovery(bool $checkout = false): array
     {
