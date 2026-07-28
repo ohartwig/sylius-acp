@@ -1,14 +1,15 @@
 {
     "name": "koh/sylius-acp",
-    "description": "Agentic Commerce Protocol discovery for Sylius",
+    "description": "Agentic Commerce Protocol discovery for Sylius: /.well-known/acp.json and a read-only product feed for agents.",
     "type": "sylius-bundle",
     "license": "MIT",
     "keywords": [
         "sylius",
-        " /.well-known/acp.json and a read-only product feed for agents.:acp",
+        "acp",
         "agentic-commerce",
         "feed",
-        "agent"
+        "agent",
+        "ai"
     ],
     "authors": [
         {
