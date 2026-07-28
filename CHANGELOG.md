@@ -1,3 +1,14 @@
+## [1.1.0](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/compare/v1.0.0...v1.1.0) (2026-07-28)
+
+### :sparkles: Features
+
+* declare licensing for config files via REUSE.toml ([3a8e918](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/commit/3a8e9180024752fcde6cb2ad1e0771357e814cf5))
+
+### :repeat: Chores
+
+* **deps:** update dependency devops/ci-cd-components/composed-default-pipelines to v1.25.0 ([efe258a](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/commit/efe258a449ecb6a6252689c6f29c42303d06e23c))
+* **deps:** update dependency devops/ci-cd-components/composed-default-pipelines to v1.25.1 ([9309dd2](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/commit/9309dd22f5a47a04eca67b46c4d8652380c18c6f))
+
 ## 1.0.0 (2026-07-28)
 
 ### :sparkles: Features
