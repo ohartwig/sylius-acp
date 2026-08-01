@@ -1,3 +1,19 @@
+## [1.1.3](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/compare/v1.1.2...v1.1.3) (2026-08-01)
+
+### :bug: Fixes
+
+* **md:** lint:markdown gruen bekommen, damit das Gate scharf werden kann ([cb2dfba](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/commit/cb2dfba73f3285c189c117c6d23e8f91045f5ad1))
+* **phpstan:** resolve all 3 level-8 findings without suppressions ([62d3997](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/commit/62d3997d25d3dee7eeb8261c56c4bb7f20336819))
+
+### :zap: Refactor
+
+* **phpstan:** use the shared level-8 standard ([1aff4ec](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/commit/1aff4ec2bcd4dd691b578be1385c3499e2f88f62))
+
+### :repeat: Chores
+
+* **ci:** den composed-Pin auf den statischen Tag [@1](https://git.ole-hartwig.eu/1) umstellen ([776badf](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/commit/776badf447e2e2e87fe0cf7f1630a8c6225d434e))
+* **deps:** update dependency devops/ci-cd-components/composed-default-pipelines to v1.32.2 ([4f93268](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/commit/4f93268f3a7e82d36da64bd41bb3e3ffcfed6260))
+
 ## [1.1.2](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/compare/v1.1.1...v1.1.2) (2026-08-01)
 
 ### :repeat: Chores
