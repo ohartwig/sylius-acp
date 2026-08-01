@@ -73,12 +73,15 @@ final class ProductFeedBuilder
         $translation = $product->getTranslation($context->localeCode);
         $pricing = $variant->getChannelPricingForChannel($context->channel);
         $slug = $translation->getSlug();
+        // Fall back to the long description when the short one is absent or blank.
+        $shortDescription = $translation->getShortDescription();
+        $shortDescription = null !== $shortDescription && '' !== $shortDescription ? $shortDescription : null;
 
         $item = [
             'id' => $variant->getCode(),
             'item_group_id' => $product->getCode(),
             'title' => $variant->getTranslation($context->localeCode)->getName() ?? $translation->getName(),
-            'description' => $this->plain($translation->getShortDescription() ?: $translation->getDescription()),
+            'description' => $this->plain($shortDescription ?? $translation->getDescription()),
             'link' => null === $slug ? null : $context->url('/'.$context->localeCode.'/products/'.$slug),
             'availability' => $variant->isInStock() ? 'in_stock' : 'out_of_stock',
             'condition' => 'new',
