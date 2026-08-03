@@ -1,3 +1,9 @@
+## [1.1.4](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/compare/v1.1.3...v1.1.4) (2026-08-03)
+
+### :repeat: Chores
+
+* **security:** Templates auf devops/repo-templates abgleichen ([ca1b47d](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/commit/ca1b47d45f9661d4bc0184c3c1e274d882266b73))
+
 ## [1.1.3](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/compare/v1.1.2...v1.1.3) (2026-08-01)
 
 ### :bug: Fixes
