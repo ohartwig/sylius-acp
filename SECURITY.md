@@ -50,6 +50,20 @@ Out of scope:
 - Social engineering, phishing, or attacks against Kai Ole Hartwig or engaged contractors
 - Third-party services we use (please report directly to the vendor)
 
+## Machine-readable advisories (CSAF 2.0)
+
+In addition to this human-readable policy, Kai Ole Hartwig publishes
+machine-readable security advisories per **BSI TR-03191 / OASIS CSAF 2.0**:
+
+- **Provider metadata**: <https://ole-hartwig.eu/.well-known/csaf-provider-metadata.json>
+- **Signing key**: <https://ole-hartwig.eu/.well-known/csaf/openpgp-key.asc>
+  (`csaf@ole-hartwig.eu`, fingerprint `53A6F843 1A05DFF1 F42D430D 2471027C E8E34A53`)
+
+Tooling that consumes CSAF feeds (vulnerability scanners, SBOM diff tools, etc.)
+can discover the feed via the well-known URL and verify the OpenPGP signature
+on each advisory. The role declared in `provider-metadata.json` is
+`csaf_trusted_provider`.
+
 ## Vulnerability handling process
 
 1. Report received → automatic acknowledgement
