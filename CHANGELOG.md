@@ -1,3 +1,9 @@
+## [1.1.5](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/compare/v1.1.4...v1.1.5) (2026-08-14)
+
+### :bug: Fixes
+
+* allow the infection extension installer plugin ([5b21b61](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/commit/5b21b61df432b9e8df567ab6c311b337726d1280))
+
 ## [1.1.4](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/compare/v1.1.3...v1.1.4) (2026-08-03)
 
 ### :repeat: Chores
