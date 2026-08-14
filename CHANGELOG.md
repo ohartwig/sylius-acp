@@ -1,3 +1,9 @@
+## [1.1.6](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/compare/v1.1.5...v1.1.6) (2026-08-14)
+
+### :bug: Fixes
+
+* **deps:** update dependency sylius/sylius to ^2.2.8 [security] ([f6f38b2](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/commit/f6f38b287bab8ec41991a95d96ac57a44af78f21))
+
 ## [1.1.5](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/compare/v1.1.4...v1.1.5) (2026-08-14)
 
 ### :bug: Fixes
