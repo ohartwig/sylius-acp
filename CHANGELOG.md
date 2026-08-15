@@ -1,3 +1,9 @@
+## [1.1.10](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/compare/v1.1.9...v1.1.10) (2026-08-15)
+
+### :bug: Fixes
+
+* **feed:** return null for a markup-only description, and cover the package ([2e52ca0](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/commit/2e52ca05af76a234c522c65e9f9f1a6bee04b442))
+
 ## [1.1.9](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/compare/v1.1.8...v1.1.9) (2026-08-15)
 
 ### :bug: Fixes
