@@ -110,6 +110,15 @@ final class ProductFeedBuilder
 
         $text = trim((string) preg_replace('/\s+/', ' ', strip_tags($text)));
 
+        // Checked again after stripping, not only before it. `<p> </p>` is not
+        // empty on the way in and is empty on the way out, so the guard above
+        // lets it through and the item ships `description: ""` — which reads as
+        // a description that exists and says nothing, rather than as a product
+        // that has none.
+        if ('' === $text) {
+            return null;
+        }
+
         return mb_strlen($text) > 500 ? mb_substr($text, 0, 497).'…' : $text;
     }
 }
