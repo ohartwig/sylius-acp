@@ -1,3 +1,9 @@
+## [1.1.18](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/compare/v1.1.17...v1.1.18) (2026-09-02)
+
+### :repeat: Chores
+
+* **repo-templates:** sync ([4915b9b](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/commit/4915b9ba2006e0963a1b5411a8c8244082fada87))
+
 ## [1.1.17](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/compare/v1.1.16...v1.1.17) (2026-09-02)
 
 ### :bug: Fixes
