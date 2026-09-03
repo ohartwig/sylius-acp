@@ -1,3 +1,9 @@
+## [1.1.19](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/compare/v1.1.18...v1.1.19) (2026-09-03)
+
+### :bug: Fixes
+
+* **deps:** update dependency sylius/sylius to ^2.2.9 ([b8ecdc3](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/commit/b8ecdc39d62bf97af3eac63acbd62a42397eec86))
+
 ## [1.1.18](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/compare/v1.1.17...v1.1.18) (2026-09-02)
 
 ### :repeat: Chores
