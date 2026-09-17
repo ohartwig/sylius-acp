@@ -1,3 +1,9 @@
+## [1.1.22](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/compare/v1.1.21...v1.1.22) (2026-09-17)
+
+### :repeat: Chores
+
+* **deps:** update dependency doctrine/collections to ^2.6.0 ([cff84c7](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/commit/cff84c7cde9ba261da9e8f2568cfea82fd20dc84))
+
 ## [1.1.21](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/compare/v1.1.20...v1.1.21) (2026-09-13)
 
 ### :repeat: Continuous Integrations
