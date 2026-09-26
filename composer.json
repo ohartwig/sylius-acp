@@ -24,7 +24,7 @@
     },
     "require": {
         "koh/sylius-agent-contracts": "^1.1",
-        "php": "^8.5.10",
+        "php": "^8.5.11",
         "sylius/sylius": "^2.2.9",
         "symfony/config": "^7.4 || ^8.0",
         "symfony/dependency-injection": "^7.4 || ^8.0",
