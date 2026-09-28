@@ -1,3 +1,15 @@
+## [1.1.27](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/compare/v1.1.26...v1.1.27) (2026-09-28)
+
+### :repeat: Continuous Integrations
+
+* **deps:** update dependency devops/ci-cd-components/composed-default-pipelines to v2.21.2 ([0089764](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/commit/0089764ad4c343f2969bb3f081c3c613d57e638d))
+* **deps:** update dependency devops/ci-cd-components/composed-default-pipelines to v2.21.1 ([cf7b262](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/commit/cf7b262f8e3f49045a6200dd566774e664785329))
+
+### :repeat: Chores
+
+* **repo-templates:** sync ([b68543b](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/commit/b68543b5f7d71657dedb3b2ef087a3523a1b6285))
+* **deps:** update dependency devops/ci-cd-components/composed-default-pipelines to v2.21.0 ([ca6d785](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/commit/ca6d785e5bb6754c547c6a99b93213fff02d1a86))
+
 ## [1.1.26](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/compare/v1.1.25...v1.1.26) (2026-09-28)
 
 ### :repeat: Chores
