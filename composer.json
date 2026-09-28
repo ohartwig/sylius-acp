@@ -34,7 +34,7 @@
         "symfony/serializer": "^7.4 || ^8.0"
     },
     "require-dev": {
-        "moselwal/dev-sylius": "^1.0",
+        "koh/dev-sylius": "^1.0",
         "doctrine/collections": "^2.6.0",
         "phpstan/extension-installer": "^1.4.3",
         "phpstan/phpstan": "^2.2.16",
@@ -64,13 +64,6 @@
         }
     },
     "repositories": [
-        {
-            "type": "composer",
-            "url": "https://git.ole-hartwig.eu/api/v4/group/175/-/packages/composer/packages.json",
-            "only": [
-                "moselwal/*"
-            ]
-        },
         {
             "type": "composer",
             "url": "https://git.ole-hartwig.eu/api/v4/group/1091/-/packages/composer/packages.json",
