@@ -14,6 +14,7 @@ path = [
     ".gitattributes",
     ".gitignore",
     "composer.json",
+    "renovate.json",
     "phpstan.neon",
     "phpunit.xml.dist",
     "SECURITY.md",
