@@ -1,3 +1,10 @@
+## [1.1.36](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/compare/v1.1.35...v1.1.36) (2026-10-13)
+
+### :repeat: Chores
+
+* **reuse:** annotate the tooling files the mirror strips ([9a4ed2e](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/commit/9a4ed2e5bb57aa0185359d0d65e842f793a2cefb))
+* publish to GitHub and Packagist ([0e1ea31](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/commit/0e1ea31bb6b7bd1aeb13abb9fd4c2c244e4c5db3))
+
 ## [1.1.35](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/compare/v1.1.34...v1.1.35) (2026-10-09)
 
 ### :repeat: Chores
