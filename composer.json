@@ -19,8 +19,9 @@
     ],
     "homepage": "https://ole-hartwig.eu/open-source/sylius-agent-ready",
     "support": {
-        "issues": "https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/-/issues",
-        "source": "https://github.com/ole-hartwig/sylius-acp"
+        "issues": "https://github.com/ohartwig/sylius-acp/issues",
+        "source": "https://github.com/ohartwig/sylius-acp",
+        "security": "https://github.com/ohartwig/sylius-acp/blob/main/SECURITY.md"
     },
     "require": {
         "koh/sylius-agent-contracts": "^1.1",
