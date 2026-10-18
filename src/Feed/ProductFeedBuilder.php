@@ -69,8 +69,7 @@ final class ProductFeedBuilder
             // short in a multi-channel shop; it never leaks.
             $products = array_values(array_filter(
                 $this->productRepository->findByNamePart($query, $context->localeCode, $page * $limit),
-                static fn ($product): bool => $product instanceof ProductInterface
-                    && $product->isEnabled()
+                static fn (ProductInterface $product): bool => $product->isEnabled()
                     && $product->hasChannel($context->channel),
             ));
         }
