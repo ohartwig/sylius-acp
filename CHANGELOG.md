@@ -1,3 +1,10 @@
+## [1.1.40](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/compare/v1.1.39...v1.1.40) (2026-10-18)
+
+### :bug: Fixes
+
+* **feed:** type the search filter instead of checking it ([ed455f7](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/commit/ed455f79851ec42e7b54c5e42870ec89a4069e05))
+* **feed:** narrow the feed to the search term in q ([514ded6](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/commit/514ded6a47cf7de728d6452211a64ecd80b74e06))
+
 ## [1.1.39](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/compare/v1.1.38...v1.1.39) (2026-10-18)
 
 ### :bug: Fixes
