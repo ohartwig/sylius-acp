@@ -18,7 +18,7 @@ SKU-level product feed agents can browse.
   agent-skills index and the MCP server card of the other `koh` bundles without
   extra configuration.
 
-Requires PHP 8.5 and Sylius 2.2 or 2.3.
+Requires PHP 8.3 or later and Sylius 2.2 or 2.3.
 
 ## Install
 
