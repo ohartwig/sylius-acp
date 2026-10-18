@@ -127,6 +127,10 @@ query string cannot pull the whole catalogue in one request. `limit` counts
 products; `count` is the number of variants returned. Descriptions are plain
 text, at most 500 characters.
 
+`q` narrows the feed to products whose name contains the term (in the
+channel's locale, enabled and in this channel only; at most 100 characters).
+Without it the feed lists the channel's latest products.
+
 The discovery document is cached for an hour, the feed for 15 minutes.
 
 ## Decommission

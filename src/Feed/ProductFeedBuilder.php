@@ -34,10 +34,16 @@ final class ProductFeedBuilder
     ) {
     }
 
+    /** Longer search terms are cut: a name search is not a place for paragraphs. */
+    private const MAX_QUERY_LENGTH = 100;
+
     /**
+     * `$query` narrows the feed to products whose name contains it. Without it
+     * the feed is the channel's latest products, as before.
+     *
      * @return array{items: list<array<string, mixed>>, page: int, limit: int, count: int}
      */
-    public function build(AgentContext $context, int $page = 1, ?int $limit = null): array
+    public function build(AgentContext $context, int $page = 1, ?int $limit = null, ?string $query = null): array
     {
         // Clamp on both ends. min() alone leaves the lower bound open, and the
         // limit comes straight off the query string: `?limit=-1` would survive
@@ -49,11 +55,25 @@ final class ProductFeedBuilder
 
         // Fetch page+1 worth so the caller can be told there is more without a
         // second count query.
-        $products = $this->productRepository->findLatestByChannel(
-            $context->channel,
-            $context->localeCode,
-            $page * $limit,
-        );
+        $query = mb_substr(trim((string) $query), 0, self::MAX_QUERY_LENGTH);
+        if ('' === $query) {
+            $products = $this->productRepository->findLatestByChannel(
+                $context->channel,
+                $context->localeCode,
+                $page * $limit,
+            );
+        } else {
+            // findByNamePart() knows no channel and no enabled flag; both are
+            // applied here, or the search would list what the shop does not
+            // sell in this channel. Filtering after the limit can leave a page
+            // short in a multi-channel shop; it never leaks.
+            $products = array_values(array_filter(
+                $this->productRepository->findByNamePart($query, $context->localeCode, $page * $limit),
+                static fn ($product): bool => $product instanceof ProductInterface
+                    && $product->isEnabled()
+                    && $product->hasChannel($context->channel),
+            ));
+        }
 
         $items = [];
         foreach (\array_slice($products, ($page - 1) * $limit, $limit) as $product) {
