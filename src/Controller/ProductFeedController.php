@@ -38,6 +38,7 @@ final class ProductFeedController
             $context,
             (int) $request->query->get('page', '1'),
             $request->query->has('limit') ? (int) $request->query->get('limit') : null,
+            $request->query->has('q') ? (string) $request->query->get('q') : null,
         );
 
         return $this->responder->respond($feed, maxAge: 900, request: $request);
