@@ -120,7 +120,7 @@ final class AcpAgentProviderTest extends TestCase
 
         $channel = $this->createStub(ChannelInterface::class);
         $channel->method('getCode')->willReturn('WEB_DE');
-        $channel->method('getName')->willReturn('Tabak Budde');
+        $channel->method('getName')->willReturn('Example Shop');
         $channel->method('getBaseCurrency')->willReturn($currency);
 
         return new AgentContext($channel, 'https://shop.example.com', 'de_DE', ['de_DE']);
