@@ -10,7 +10,6 @@ namespace Koh\SyliusAcp\Feed;
 use Koh\SyliusAgentContracts\Context\AgentContext;
 use Sylius\Component\Core\Model\ProductInterface;
 use Sylius\Component\Core\Model\ProductVariantInterface;
-use Sylius\Component\Core\Repository\ProductRepositoryInterface;
 
 /**
  * Builds the agent-facing product feed.
@@ -25,12 +24,12 @@ use Sylius\Component\Core\Repository\ProductRepositoryInterface;
  */
 final class ProductFeedBuilder
 {
-    /** @param ProductRepositoryInterface<ProductInterface> $productRepository */
     public function __construct(
-        private readonly ProductRepositoryInterface $productRepository,
+        private readonly FeedProductSource $products,
         private readonly ?int $ageRestriction = null,
         private readonly int $defaultLimit = 100,
         private readonly int $maxLimit = 500,
+        private readonly int $maxPage = 1000,
     ) {
     }
 
@@ -53,29 +52,25 @@ final class ProductFeedBuilder
         $limit = max(1, min($limit ?? $this->defaultLimit, $this->maxLimit));
         $page = max(1, $page);
 
-        // Fetch page+1 worth so the caller can be told there is more without a
-        // second count query.
-        $query = mb_substr(trim((string) $query), 0, self::MAX_QUERY_LENGTH);
-        if ('' === $query) {
-            $products = $this->productRepository->findLatestByChannel(
-                $context->channel,
-                $context->localeCode,
-                $page * $limit,
-            );
-        } else {
-            // findByNamePart() knows no channel and no enabled flag; both are
-            // applied here, or the search would list what the shop does not
-            // sell in this channel. Filtering after the limit can leave a page
-            // short in a multi-channel shop; it never leaks.
-            $products = array_values(array_filter(
-                $this->productRepository->findByNamePart($query, $context->localeCode, $page * $limit),
-                static fn (ProductInterface $product): bool => $product->isEnabled()
-                    && $product->hasChannel($context->channel),
-            ));
+        // The page is capped as well. Past max_page the answer is an empty
+        // list without touching the database; that includes a value that
+        // overflowed to PHP_INT_MAX on its way off the query string, which
+        // used to end in a TypeError (AUD-010-F03).
+        if ($page > $this->maxPage) {
+            return ['items' => [], 'page' => $page, 'limit' => $limit, 'count' => 0];
         }
 
+        $query = mb_substr(trim((string) $query), 0, self::MAX_QUERY_LENGTH);
+        $products = $this->products->findPage(
+            $context->channel,
+            $context->localeCode,
+            '' === $query ? null : $query,
+            ($page - 1) * $limit,
+            $limit,
+        );
+
         $items = [];
-        foreach (\array_slice($products, ($page - 1) * $limit, $limit) as $product) {
+        foreach ($products as $product) {
             foreach ($product->getEnabledVariants() as $variant) {
                 if ($variant instanceof ProductVariantInterface) {
                     $items[] = $this->variant($product, $variant, $context);

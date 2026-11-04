@@ -67,6 +67,7 @@ koh_acp:
     feed:
         default_limit: 100
         max_limit: 500
+        max_page: 1000        # beyond it the feed answers an empty list
 ```
 
 - `api_base` is announced, not routed. The feed route is fixed at
@@ -122,8 +123,10 @@ koh_acp:
 }
 ```
 
-`limit` is clamped to `1…max_limit` and `page` to at least 1, so a crafted
-query string cannot pull the whole catalogue in one request. `limit` counts
+`limit` is clamped to `1…max_limit` and `page` to at least 1; a `page` above
+`max_page` answers an empty list without a database query. The page is cut in
+the query (offset and row limit), so a crafted query string can neither pull
+the whole catalogue in one request nor make the database read it. `limit` counts
 products; `count` is the number of variants returned. Descriptions are plain
 text, at most 500 characters.
 

@@ -47,6 +47,11 @@ final class KohSyliusAcpBundle extends AbstractBundle
                     ->children()
                         ->integerNode('default_limit')->defaultValue(100)->end()
                         ->integerNode('max_limit')->defaultValue(500)->end()
+                        ->integerNode('max_page')
+                            ->defaultValue(1000)
+                            ->min(1)
+                            ->info('Highest page the feed answers; beyond it the list is empty. Bounds the offset an anonymous caller can ask the database for.')
+                        ->end()
                     ->end()
                 ->end()
             ->end();
@@ -65,6 +70,7 @@ final class KohSyliusAcpBundle extends AbstractBundle
         $builder->setParameter('koh_acp.age_restriction', $config['age_restriction'] ?? null);
         $builder->setParameter('koh_acp.feed.default_limit', (int) ($feed['default_limit'] ?? 100));
         $builder->setParameter('koh_acp.feed.max_limit', (int) ($feed['max_limit'] ?? 500));
+        $builder->setParameter('koh_acp.feed.max_page', (int) ($feed['max_page'] ?? 1000));
 
         $container->import('../config/services.php');
     }
