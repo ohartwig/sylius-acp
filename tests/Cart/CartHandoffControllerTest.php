@@ -9,6 +9,7 @@ namespace Koh\SyliusAcp\Tests\Cart;
 
 use Doctrine\Persistence\ObjectManager;
 use Koh\SyliusAcp\Controller\CartHandoffController;
+use Koh\SyliusAgentContracts\Cart\CartHandoff;
 use Koh\SyliusAgentContracts\Context\AgentContextFactoryInterface;
 use PHPUnit\Framework\TestCase;
 use Sylius\Bundle\OrderBundle\Controller\AddToCartCommandInterface;
@@ -257,12 +258,14 @@ final class CartHandoffControllerTest extends TestCase
         return new CartHandoffController(
             $this->store(orders: $orders),
             $contexts,
-            $cartContext,
-            $itemFactory,
-            $quantities,
-            $commands,
-            $this->dispatcher,
-            $manager ?? $this->createMock(ObjectManager::class),
+            new CartHandoff(
+                $cartContext,
+                $itemFactory,
+                $quantities,
+                $commands,
+                $this->dispatcher,
+                $manager ?? $this->createMock(ObjectManager::class),
+            ),
             $router,
             $enabled,
             $cartRoute,

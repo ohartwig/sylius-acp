@@ -7,25 +7,16 @@ declare(strict_types=1);
 
 namespace Koh\SyliusAcp\Controller;
 
-use Doctrine\Persistence\ObjectManager;
 use Koh\SyliusAcp\Cart\AgentCartStore;
+use Koh\SyliusAgentContracts\Cart\CartHandoff;
+use Koh\SyliusAgentContracts\Cart\CartHandoffLine;
 use Koh\SyliusAgentContracts\Context\AgentContextFactoryInterface;
-use Sylius\Bundle\OrderBundle\Factory\AddToCartCommandFactoryInterface;
 use Sylius\Component\Core\Model\OrderInterface;
-use Sylius\Component\Core\Model\OrderItemInterface;
-use Sylius\Component\Order\Context\CartContextInterface;
-use Sylius\Component\Order\Modifier\OrderItemQuantityModifierInterface;
-use Sylius\Component\Order\SyliusCartEvents;
-use Sylius\Resource\Factory\FactoryInterface;
-use Symfony\Component\EventDispatcher\GenericEvent;
-use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\Session\FlashBagAwareSessionInterface;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 /**
  * `continue_url` of an ACP cart: hands the agent's cart to the buyer.
@@ -40,23 +31,18 @@ use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
  *
  * Opening the link twice does not add the items twice: the session remembers
  * which version of which agent cart it took over.
+ *
+ * The handoff itself is {@see CartHandoff}, shared with the UCP permalink;
+ * this controller finds the agent cart and picks notices and destinations.
  */
 final class CartHandoffController
 {
     public const SESSION_KEY = 'koh_acp.handoffs';
 
-    /**
-     * @param FactoryInterface<OrderItemInterface> $orderItemFactory
-     */
     public function __construct(
         private readonly AgentCartStore $store,
         private readonly AgentContextFactoryInterface $contextFactory,
-        private readonly CartContextInterface $cartContext,
-        private readonly FactoryInterface $orderItemFactory,
-        private readonly OrderItemQuantityModifierInterface $quantityModifier,
-        private readonly AddToCartCommandFactoryInterface $addToCartCommandFactory,
-        private readonly EventDispatcherInterface $eventDispatcher,
-        private readonly ObjectManager $orderManager,
+        private readonly CartHandoff $handoff,
         private readonly UrlGeneratorInterface $urlGenerator,
         private readonly bool $enabled,
         private readonly string $cartRoute,
@@ -79,73 +65,48 @@ final class CartHandoffController
 
         $locale = $agentCart->getLocaleCode() ?? $context->localeCode;
         $version = (string) ($agentCart->getUpdatedAt() ?? $agentCart->getCreatedAt())?->format('U.u');
-        $handoffs = $session->get(self::SESSION_KEY, []);
-        $handoffs = \is_array($handoffs) ? $handoffs : [];
-        if (($handoffs[$id] ?? null) === $version) {
+        if ($this->handoff->wasHandedOver($session, self::SESSION_KEY, $id, $version)) {
             return $this->redirect($this->cartRoute, $locale);
         }
 
-        $buyerCart = $this->cartContext->getCart();
-        if (!$buyerCart instanceof OrderInterface) {
-            throw new \LogicException(\sprintf('The ACP cart handoff needs a Sylius Core order, got %s.', $buyerCart::class));
-        }
-
-        try {
-            foreach ($agentCart->getItems() as $agentItem) {
-                $variant = $agentItem->getVariant();
-                if (null === $variant) {
-                    continue;
-                }
-
-                $item = $this->orderItemFactory->createNew();
-                $item->setVariant($variant);
-                $this->quantityModifier->modify($item, $agentItem->getQuantity());
-
-                $this->eventDispatcher->dispatch(
-                    new GenericEvent($this->addToCartCommandFactory->createWithCartAndCartItem($buyerCart, $item)),
-                    SyliusCartEvents::CART_ITEM_ADD,
-                );
-            }
-        } catch (\RuntimeException) {
-            // A gate said no. Undo what earlier lines changed in memory, so a
-            // later flush elsewhere cannot persist half a handoff.
-            if (null !== $buyerCart->getId()) {
-                $this->orderManager->refresh($buyerCart);
-            }
-
+        $result = $this->handoff->handOver(self::lines($agentCart));
+        if ($result->isRefused()) {
             return $this->fallback($session, 'koh_acp.cart_handoff.blocked', $locale);
         }
 
-        $this->orderManager->persist($buyerCart);
-        $this->orderManager->flush();
+        $this->handoff->remember($session, self::SESSION_KEY, $id, $version);
+        $this->handoff->flash($session, 'success', 'koh_acp.cart_handoff.added');
 
-        $handoffs[$id] = $version;
-        $session->set(self::SESSION_KEY, \array_slice($handoffs, -20, null, true));
-        $this->flash($session, 'success', 'koh_acp.cart_handoff.added');
+        return $this->redirect($this->cartRoute, $result->cart?->getLocaleCode() ?? $locale);
+    }
 
-        return $this->redirect($this->cartRoute, $buyerCart->getLocaleCode() ?? $locale);
+    /**
+     * Lines whose variant has gone since the agent built the cart are skipped.
+     *
+     * @return list<CartHandoffLine>
+     */
+    private static function lines(OrderInterface $agentCart): array
+    {
+        $lines = [];
+        foreach ($agentCart->getItems() as $agentItem) {
+            $variant = $agentItem->getVariant();
+            if (null !== $variant) {
+                $lines[] = new CartHandoffLine($variant, $agentItem->getQuantity());
+            }
+        }
+
+        return $lines;
     }
 
     private function fallback(SessionInterface $session, string $message, string $locale): Response
     {
-        $this->flash($session, 'info', $message);
+        $this->handoff->flash($session, 'info', $message);
 
         return $this->redirect($this->fallbackRoute, $locale);
     }
 
-    private function flash(SessionInterface $session, string $type, string $message): void
-    {
-        if ($session instanceof FlashBagAwareSessionInterface) {
-            $session->getFlashBag()->add($type, $message);
-        }
-    }
-
     private function redirect(string $route, string $locale): Response
     {
-        $response = new RedirectResponse($this->urlGenerator->generate($route, ['_locale' => $locale]));
-        $response->headers->set('Cache-Control', 'no-store');
-        $response->headers->set('Referrer-Policy', 'no-referrer');
-
-        return $response;
+        return $this->handoff->redirect($this->urlGenerator->generate($route, ['_locale' => $locale]));
     }
 }
