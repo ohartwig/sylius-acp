@@ -109,14 +109,29 @@ final class AcpAgentProviderTest extends TestCase
 
         self::assertCount(1, $skills);
         self::assertInstanceOf(AgentSkill::class, $skills[0]);
-        self::assertSame('product-feed', $skills[0]->id);
+        self::assertSame('catalogue-search', $skills[0]->id);
+    }
+
+    public function testTheCatalogueEndpointIsNotPresentedAsTheAcpProductFeed(): void
+    {
+        // ACP's Feed API is hosted by the agent; a merchant endpoint presented
+        // as "the ACP feed" would be a non-conformant ACP surface.
+        $provider = new AcpAgentProvider(checkoutEnabled: true);
+        $endpoint = iterator_to_array($provider->getAgentEndpoints($this->context()))[1];
+        $skill = iterator_to_array($provider->getAgentSkills($this->context()))[0];
+
+        self::assertSame('Catalogue search', $endpoint->title);
+        self::assertStringContainsString('not an ACP product feed', (string) $endpoint->description);
+        self::assertSame('Catalogue search', $skill->name);
+        self::assertStringContainsString('GET /api/agent/feed?q=', $skill->description);
+        self::assertStringNotContainsStringIgnoringCase('acp', $skill->description);
     }
 
     public function testTheSkillCarriesTagsAndOutputModes(): void
     {
         $skill = iterator_to_array((new AcpAgentProvider())->getAgentSkills($this->context()))[0];
 
-        self::assertSame(['commerce', 'catalog'], $skill->tags);
+        self::assertSame(['commerce', 'catalog', 'search'], $skill->tags);
         self::assertSame(['application/json'], $skill->outputModes);
         self::assertNotSame('', $skill->description);
     }

@@ -7,8 +7,8 @@ SPDX-License-Identifier: MIT
 
 [Agentic Commerce Protocol](https://agenticcommerce.dev) (ACP) for Sylius: the
 ACP cart service with a buyer handoff, a discovery document at
-`/.well-known/acp.json` and a read-only, SKU-level product feed agents can
-browse.
+`/.well-known/acp.json`, publication of the ACP product feed to agents, and a
+read-only catalogue endpoint for in-page tools.
 
 - **Carts** (ACP 2026-04-17, `carts` service) — an agent builds a cart with
   estimated totals; `continue_url` hands it to the buyer, who checks out in the
@@ -16,11 +16,16 @@ browse.
 - **Discovery document** — protocol version, API base URL, transports, the
   services on offer and the channel's currency and locales, per channel. Served
   only when the shop offers an ACP service; otherwise `404`, see below.
-- **Product feed** — one entry per enabled variant, with price in minor units,
-  currency, availability and an optional age restriction.
+- **ACP product feed** (ACP 2026-04-17, `schema.feed.json`) — `Product` and
+  `Variant` objects, published *to the agent*: as an offline snapshot
+  (`metadata.json` + `products.jsonl`) or by upsert to the agent-hosted Feed
+  API. Commands only; nothing runs until configured. See below.
+- **Catalogue endpoint** — `GET /api/agent/feed`, a shop-specific JSON listing
+  and name search used by the in-page tools of `koh/sylius-webmcp`. Not an ACP
+  surface.
 - **No purchase through the API** — checkout is not declared unless the
   installation serves it itself.
-- **Registered as a skill** — the catalogue shows up in the A2A card, the
+- **Registered as a skill** — catalogue search shows up in the A2A card, the
   agent-skills index and the MCP server card of the other `koh` bundles without
   extra configuration.
 
@@ -69,7 +74,7 @@ koh_acp:
     version: '2026-04-17'     # ACP version announced in the discovery document
     api_base: '/api/agent'    # advertised as api_base_url
     checkout: false           # declare ACP checkout (served by the installation)
-    age_restriction: ~        # minimum age carried on every feed item and cart
+    age_restriction: ~        # minimum age on every catalogue item and cart
     carts:
         enabled: false
         bearer_token_hashes: '%env(ACP_CART_TOKEN_HASHES)%'
@@ -79,26 +84,45 @@ koh_acp:
         rate_limit_interval: '1 minute'
         handoff_route: sylius_shop_cart_summary
         fallback_route: sylius_shop_homepage
-    feed:
+    acp_feed:                 # the ACP product feed, see "ACP product feed"
+        feed_id: ~            # issued by the agent
+        channel: ~            # default: the only enabled channel
+        locale: ~             # default: the channel's default locale
+        target_country: ~     # default: the channel's only country, else billing country
+        media_path_prefix: '/media/image/'
+        batch_size: 100       # products per upsert request (1…1000)
+        seller:
+            name: ~           # default: shop billing company, else channel name
+            links: []         # [{type: refund_policy, url: 'https://…', title: 'Refunds'}]
+        api:                  # agent-hosted Feed API; off while base_url or bearer_token is empty
+            base_url: ''
+            bearer_token: ''
+            timeout: 30
+            max_attempts: 3
+    feed:                     # the catalogue endpoint, not ACP
         default_limit: 100
         max_limit: 500
-        max_page: 1000        # beyond it the feed answers an empty list
+        max_page: 1000        # beyond it the endpoint answers an empty list
 ```
 
-- `api_base` is announced, not routed. The feed route is fixed at
+- `api_base` is announced, not routed. The catalogue route is fixed at
   `/api/agent/feed`; if you change `api_base`, add a route for
   `{api_base}/feed` pointing at `Koh\SyliusAcp\Controller\ProductFeedController`.
 - `checkout` stays off unless the installation really serves ACP checkout
   sessions (`{api_base}/checkout_sessions`); this bundle does not implement
   them. An agent that finds `checkout` in the capabilities will try to buy.
-- ACP's `capabilities.services` is a closed list of ACP operations (checkout,
-  orders, delegate_payment, carts). The product feed is not one of them, so
-  with neither carts nor checkout on the shop offers no ACP service and
+- ACP's `capabilities.services` is a closed list per API version; in
+  2026-04-17 it is checkout, orders, delegate_payment and carts. The product
+  feeds RFC proposes a `feeds` value, but 2026-04-17 does not admit it, so the
+  discovery document never lists `feeds`, whatever is configured. With neither
+  carts nor checkout on, the shop offers no ACP service and
   `/.well-known/acp.json` answers `404` — the discovery RFC's signal for "this
   seller does not support ACP". llms.txt and the api-catalog then do not
-  announce it either; the feed stays announced.
-- `age_restriction` belongs on every age-restricted catalogue. A feed that omits
-  it invites an agent to treat restricted items as ordinary stock.
+  announce it either; the catalogue endpoint stays announced.
+- `age_restriction` belongs on every age-restricted catalogue. It is carried on
+  every item of the catalogue endpoint and on every cart. The ACP product feed
+  schema has no field for it, so the ACP feed cannot carry it; the cart and the
+  shop's own checkout gate remain where it is enforced.
 
 ## Carts
 
@@ -131,7 +155,8 @@ Routes (fixed, like the feed):
   without customer or session, priced by the shop's own order processors. The
   totals leave shipping out and say so; an included VAT is reported, not added.
   Sylius' expired-carts cleanup removes it; `expires_at` says when.
-- **Items.** `line_items[].id` is the feed's `id` (the variant code). Unknown,
+- **Items.** `line_items[].id` is the ACP feed's `Variant.id` (the variant
+  code), also `id` on the catalogue endpoint. Unknown,
   disabled or foreign-channel items are dropped with a `not_found` message;
   short stock stays in the cart with an `out_of_stock` message; nothing
   available is a `422`. Buyer details are not stored.
@@ -147,6 +172,89 @@ Routes (fixed, like the feed):
 - **Firewall.** `/api/agent/` must not start a session (see the agent-public
   firewall in the installation); `/acp-cart/` must run in the shop firewall so
   the buyer's session and login apply.
+
+## ACP product feed
+
+In ACP the Product Feed API is **hosted by the agent**: the merchant publishes
+to it, and agents must not call feed endpoints on merchants (RFC "Product
+Feeds", §3.1). This bundle therefore serves no ACP feed route; it builds the
+feed and hands it to the agent in either of the RFC's two publication models.
+
+Contents, per channel and locale: every enabled product of the channel with a
+translation in the locale and at least one enabled variant priced in the
+channel. Each line validates against `Product` of ACP 2026-04-17
+(`schema.feed.json`), `metadata.json` against `FeedMetadata`.
+
+| ACP field | Sylius source |
+|---|---|
+| `Product.id` | product code (the cart's `product_id`) |
+| `Product.title` | product name in the locale |
+| `Product.description.plain` | description, else short description; markup stripped, entities decoded |
+| `Product.url` | `{channel hostname}/{locale}/products/{slug}` |
+| `Product.media[]` | product images, `main` first: `{hostname}{media_path_prefix}{path}` |
+| `Variant.id` | variant code — the id the cart service accepts as `line_items[].id` |
+| `Variant.title` | variant name, else product name – option values |
+| `Variant.url` | the product URL |
+| `Variant.price` | channel price, minor units, channel base currency (`EUR`) |
+| `Variant.list_price` | channel original price, only when above the price |
+| `Variant.availability` | `available` and `in_stock`/`out_of_stock`, by the shop's stock check |
+| `Variant.categories[]` | product taxons as paths below the root, main taxon first, taxonomy `merchant` |
+| `Variant.condition` | `["new"]` |
+| `Variant.variant_options[]` | option name and value in the locale, in the product's option order |
+| `Variant.media[]` | images attached to the variant |
+| `Variant.seller` | `acp_feed.seller` |
+| `FeedMetadata` | `id` = `feed_id`, `target_country`, `updated_at` = time of export |
+
+Not emitted, because Sylius has no source for them: `barcodes`,
+`unit_price`, `marketplace`, `Variant.description`.
+
+### Offline full replacement
+
+```bash
+bin/console koh:acp:feed:export var/acp-feed --channel=WEB --locale=de_DE --feed-id=feed_8f3K2x
+```
+
+Writes `var/acp-feed/metadata.json` and `var/acp-feed/products.jsonl` (one
+product per line). The catalogue is read in keyset batches and written as it is
+read, so memory stays flat for large catalogues. Both files are written under a
+temporary name and renamed into place. Uploading them is up to you: the agent's
+onboarding says where. A full replacement removes from the agent every product
+the snapshot does not contain.
+
+### API upsert
+
+```yaml
+koh_acp:
+    acp_feed:
+        feed_id: '%env(default::ACP_FEED_ID)%'
+        api:
+            base_url: '%env(default::ACP_FEED_API_URL)%'      # https://…; /feeds is appended
+            bearer_token: '%env(default::ACP_FEED_API_TOKEN)%'
+```
+
+```bash
+bin/console koh:acp:feed:create            # once: POST /feeds, prints the feed id
+bin/console koh:acp:feed:push              # PATCH /feeds/{id}/products, in batches
+bin/console koh:acp:feed:push --retire-missing
+```
+
+- Every request carries `Authorization: Bearer`, `API-Version` (`koh_acp.version`)
+  and JSON; `POST` and `PATCH` carry an `Idempotency-Key`, the same on every
+  retry of one request and new on the next run.
+- `429`, `5xx` and broken connections are retried (`max_attempts`), honouring
+  `Retry-After` up to 60 seconds. Errors in ACP's flat shape (`type`, `code`,
+  `message`, `param`) are reported as such and end the command with exit code 1.
+- `push` first reads the feed (`GET /feeds/{id}`), so an unknown feed id stops
+  it before anything is sent. Each product is sent whole, as the RFC
+  recommends.
+- An upsert never deletes. `--retire-missing` reads the agent's product set back
+  and re-sends every product the shop no longer publishes with all variants
+  `available: false`, `status: discontinued`.
+- Unconfigured (`base_url`, `bearer_token` and `feed_id` empty), `push` says so
+  and exits 0, so a schedule can be set up ahead of the configuration. A half
+  configuration exits 1 and names what is missing. `http://` is refused.
+
+Run `push` from the scheduler of your choice, e.g. hourly.
 
 ## Output
 
@@ -171,7 +279,9 @@ Routes (fixed, like the feed):
 }
 ```
 
-`GET /api/agent/feed?page=1&limit=2`:
+`GET /api/agent/feed?page=1&limit=2` — the catalogue endpoint. A
+shop-specific shape for in-page tools, not ACP; agents that speak ACP get the
+catalogue from the feed published to them:
 
 ```json
 {
@@ -245,13 +355,13 @@ Without it the feed lists the channel's latest products.
 }
 ```
 
-The discovery document is cached for an hour, the feed for 15 minutes; cart
-answers are `no-store`.
+The discovery document is cached for an hour, the catalogue endpoint for 15
+minutes; cart answers are `no-store`.
 
 ## Decommission
 
-Remove the `composer require`, the `config/bundles.php` entry, the route import
-and `config/packages/koh_acp.yaml`. No database table and no cache pool of its
+Remove the `composer require`, the `config/bundles.php` entry, the route import,
+`config/packages/koh_acp.yaml` and any schedule running `koh:acp:feed:push`. No database table and no cache pool of its
 own; agent carts are Sylius carts and expire with them.
 
 ## Security

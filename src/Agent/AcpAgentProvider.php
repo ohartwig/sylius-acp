@@ -17,13 +17,19 @@ use Koh\SyliusAgentContracts\Provider\AgentSkillProviderInterface;
 use Koh\SyliusAgentContracts\Provider\ApiCatalogEntryProviderInterface;
 
 /**
- * Announces the product feed, the ACP discovery document where one exists, and
- * registers the catalogue as a skill.
+ * Announces the catalogue endpoint, the ACP discovery document where one
+ * exists, and registers the catalogue as a skill.
  *
  * The discovery document answers 404 unless carts or checkout are on, so it is
  * announced only then: llms.txt and the api-catalog must not point at a 404.
  *
- * Registering the skill is what makes "browse this shop's catalogue" show up in
+ * The catalogue endpoint ({api_base}/feed) is the shop's own JSON listing and
+ * search, used by the in-page tools of koh/sylius-webmcp. It is not the ACP
+ * product feed and is never announced as one: in ACP the Feed API is hosted by
+ * the agent, the merchant publishes to it (koh:acp:feed:export / push), and
+ * agents must not call feed endpoints on merchants.
+ *
+ * Registering the skill is what makes "search this shop's catalogue" show up in
  * the A2A card, the agent-skills index and the MCP server card without any of
  * those packages knowing ACP exists.
  */
@@ -54,8 +60,8 @@ final class AcpAgentProvider implements
 
         yield new AgentEndpoint(
             path: $this->apiBase.'/feed',
-            title: 'Product feed',
-            description: 'Paginated, SKU-level product feed.',
+            title: 'Catalogue search',
+            description: 'Paginated, SKU-level catalogue listing with name search (q). Shop-specific JSON, not an ACP product feed.',
         );
     }
 
@@ -73,10 +79,10 @@ final class AcpAgentProvider implements
     public function getAgentSkills(AgentContext $context): iterable
     {
         yield new AgentSkill(
-            id: 'product-feed',
-            name: 'Product feed',
-            description: 'List the shop catalogue at SKU level with prices and availability.',
-            tags: ['commerce', 'catalog'],
+            id: 'catalogue-search',
+            name: 'Catalogue search',
+            description: 'List or search the shop catalogue by product name, at SKU level with prices and availability (GET '.$this->apiBase.'/feed?q=…, shop-specific JSON).',
+            tags: ['commerce', 'catalog', 'search'],
             outputModes: ['application/json'],
         );
 

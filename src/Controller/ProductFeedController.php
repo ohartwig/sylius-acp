@@ -14,7 +14,12 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Serves the read-only product feed at {api_base}/feed.
+ * Serves the read-only catalogue endpoint at {api_base}/feed.
+ *
+ * Not the ACP product feed, despite the path: ACP's Feed API is hosted by the
+ * agent and fed by the merchant (see koh:acp:feed:export and
+ * koh:acp:feed:push). This is the shop's own listing and name search, kept
+ * because the in-page search tool of koh/sylius-webmcp calls it.
  *
  * A narrow, purpose-built surface rather than the full Sylius Shop API. The
  * shop needs to expose a catalogue to agents; it does not need to expose cart

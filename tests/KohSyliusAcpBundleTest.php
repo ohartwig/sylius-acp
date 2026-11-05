@@ -194,6 +194,102 @@ final class KohSyliusAcpBundleTest extends TestCase
         self::assertNotSame([], $this->loadExtension([])->getDefinitions());
     }
 
+    public function testTheAcpFeedIsUnconfiguredByDefault(): void
+    {
+        // Nothing may be published until somebody names a target: no feed id,
+        // no Feed API URL, no token.
+        $acpFeed = $this->processConfig([])['acp_feed'];
+
+        self::assertNull($acpFeed['feed_id']);
+        self::assertNull($acpFeed['channel']);
+        self::assertNull($acpFeed['locale']);
+        self::assertNull($acpFeed['target_country']);
+        self::assertSame('/media/image/', $acpFeed['media_path_prefix']);
+        self::assertSame(100, $acpFeed['batch_size']);
+        self::assertSame(['name' => null, 'links' => []], $acpFeed['seller']);
+        self::assertSame(['base_url' => '', 'bearer_token' => '', 'timeout' => 30.0, 'max_attempts' => 3], $acpFeed['api']);
+
+        $builder = $this->loadExtension([]);
+        self::assertNull($builder->getParameter('koh_acp.acp_feed.feed_id'));
+        self::assertSame('', $builder->getParameter('koh_acp.acp_feed.api.base_url'));
+        self::assertSame('', $builder->getParameter('koh_acp.acp_feed.api.bearer_token'));
+        self::assertSame([], $builder->getParameter('koh_acp.acp_feed.seller.links'));
+    }
+
+    public function testTheAcpFeedSettingsReachTheContainer(): void
+    {
+        $settings = [
+            'feed_id' => '%env(ACP_FEED_ID)%',
+            'channel' => 'WEB',
+            'locale' => 'de_DE',
+            'target_country' => 'DE',
+            'media_path_prefix' => '/media/cache/large/',
+            'batch_size' => 50,
+            'seller' => ['name' => 'Example Shop', 'links' => [['type' => 'refund_policy', 'url' => 'https://shop.example.com/refunds', 'title' => 'Refunds']]],
+            'api' => ['base_url' => '%env(ACP_FEED_API_URL)%', 'bearer_token' => '%env(ACP_FEED_API_TOKEN)%', 'timeout' => 10.0, 'max_attempts' => 5],
+        ];
+        $this->processConfig([['acp_feed' => $settings]]);
+        $builder = $this->loadExtension(['acp_feed' => $settings]);
+
+        self::assertSame('%env(ACP_FEED_ID)%', $builder->getParameter('koh_acp.acp_feed.feed_id'));
+        self::assertSame('WEB', $builder->getParameter('koh_acp.acp_feed.channel'));
+        self::assertSame('de_DE', $builder->getParameter('koh_acp.acp_feed.locale'));
+        self::assertSame('DE', $builder->getParameter('koh_acp.acp_feed.target_country'));
+        self::assertSame('/media/cache/large/', $builder->getParameter('koh_acp.acp_feed.media_path_prefix'));
+        self::assertSame(50, $builder->getParameter('koh_acp.acp_feed.batch_size'));
+        self::assertSame('Example Shop', $builder->getParameter('koh_acp.acp_feed.seller.name'));
+        self::assertSame($settings['seller']['links'], $builder->getParameter('koh_acp.acp_feed.seller.links'));
+        self::assertSame('%env(ACP_FEED_API_URL)%', $builder->getParameter('koh_acp.acp_feed.api.base_url'));
+        self::assertSame('%env(ACP_FEED_API_TOKEN)%', $builder->getParameter('koh_acp.acp_feed.api.bearer_token'));
+        self::assertSame(10.0, $builder->getParameter('koh_acp.acp_feed.api.timeout'));
+        self::assertSame(5, $builder->getParameter('koh_acp.acp_feed.api.max_attempts'));
+    }
+
+    public function testAcpFeedLimitsAreBounded(): void
+    {
+        foreach ([['batch_size', 1, 1000, 0, 1001], ['max_attempts', 1, 10, 0, 11]] as [$key, $low, $high, $tooLow, $tooHigh]) {
+            $section = 'max_attempts' === $key ? 'api' : null;
+            $wrap = static fn (int $value): array => [['acp_feed' => null === $section ? [$key => $value] : [$section => [$key => $value]]]];
+            $read = fn (int $value): mixed => null === $section
+                ? $this->processConfig($wrap($value))['acp_feed'][$key]
+                : $this->processConfig($wrap($value))['acp_feed'][$section][$key];
+
+            self::assertSame($low, $read($low));
+            self::assertSame($high, $read($high));
+            foreach ([$tooLow, $tooHigh] as $invalid) {
+                try {
+                    $this->processConfig($wrap($invalid));
+                    self::fail($key.' accepted '.$invalid);
+                } catch (\Symfony\Component\Config\Definition\Exception\InvalidConfigurationException) {
+                    $this->addToAssertionCount(1);
+                }
+            }
+        }
+
+        self::assertSame(1.0, $this->processConfig([['acp_feed' => ['api' => ['timeout' => 1.0]]]])['acp_feed']['api']['timeout']);
+        $this->expectException(\Symfony\Component\Config\Definition\Exception\InvalidConfigurationException::class);
+        $this->processConfig([['acp_feed' => ['api' => ['timeout' => 0.5]]]]);
+    }
+
+    public function testASellerLinkMustBeAbsolute(): void
+    {
+        $this->expectException(\Symfony\Component\Config\Definition\Exception\InvalidConfigurationException::class);
+        $this->expectExceptionMessage('Seller link url must be absolute');
+
+        $this->processConfig([['acp_feed' => ['seller' => ['links' => [['type' => 'faq', 'url' => '/faq']]]]]]);
+    }
+
+    public function testTheFeedCommandsAreRegisteredButNoRouteServesTheAcpFeed(): void
+    {
+        $builder = $this->loadExtension([]);
+
+        foreach ([\Koh\SyliusAcp\Command\ExportFeedCommand::class, \Koh\SyliusAcp\Command\PushFeedCommand::class, \Koh\SyliusAcp\Command\CreateFeedCommand::class] as $id) {
+            self::assertTrue($builder->hasDefinition($id), $id);
+            self::assertTrue($builder->getDefinition($id)->hasTag('console.command'), $id);
+        }
+        self::assertSame('http_client', (string) $builder->getDefinition(\Koh\SyliusAcp\ProductFeed\Api\FeedApiClient::class)->getArgument(0));
+    }
+
     /**
      * @param list<array<string, mixed>> $configs
      *
