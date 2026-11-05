@@ -24,6 +24,7 @@
         "security": "https://github.com/ohartwig/sylius-acp/blob/main/SECURITY.md"
     },
     "require": {
+        "doctrine/orm": "^2.18 || ^3.5",
         "koh/sylius-agent-contracts": "^1.1",
         "php": "^8.3",
         "sylius/sylius": "^2.2.9 || ^2.3.0",

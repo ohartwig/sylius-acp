@@ -8,6 +8,7 @@ declare(strict_types=1);
 namespace Koh\SyliusAcp\Tests;
 
 use Koh\SyliusAcp\Controller\AcpDiscoveryController;
+use Koh\SyliusAcp\Feed\FeedProductSource;
 use Koh\SyliusAcp\Feed\ProductFeedBuilder;
 use Koh\SyliusAgentContracts\Context\AgentContext;
 use Koh\SyliusAgentContracts\Context\AgentContextFactoryInterface;
@@ -18,9 +19,8 @@ use Sylius\Component\Core\Model\ChannelPricingInterface;
 use Sylius\Component\Core\Model\ProductInterface;
 use Sylius\Component\Core\Model\ProductTranslationInterface;
 use Sylius\Component\Core\Model\ProductVariantInterface;
-use Sylius\Component\Product\Model\ProductVariantTranslationInterface;
-use Sylius\Component\Core\Repository\ProductRepositoryInterface;
 use Sylius\Component\Currency\Model\CurrencyInterface;
+use Sylius\Component\Product\Model\ProductVariantTranslationInterface;
 use Symfony\Component\HttpFoundation\Request;
 
 final class AcpTest extends TestCase
@@ -136,8 +136,8 @@ final class AcpTest extends TestCase
     /** @return array{items: list<array<string, mixed>>, page: int, limit: int, count: int} */
     private function feed(?int $ageRestriction = null, ?int $limit = null): array
     {
-        $repository = $this->createMock(ProductRepositoryInterface::class);
-        $repository->method('findLatestByChannel')->willReturn([$this->product()]);
+        $repository = $this->createStub(FeedProductSource::class);
+        $repository->method('findPage')->willReturn([$this->product()]);
 
         return (new ProductFeedBuilder($repository, $ageRestriction))->build($this->context(), 1, $limit);
     }

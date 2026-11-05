@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Koh\SyliusAcp\Tests;
 
+use Koh\SyliusAcp\Feed\FeedProductSource;
 use Koh\SyliusAcp\Feed\ProductFeedBuilder;
 use Koh\SyliusAgentContracts\Context\AgentContext;
 use PHPUnit\Framework\TestCase;
@@ -15,7 +16,6 @@ use Sylius\Component\Core\Model\ChannelPricingInterface;
 use Sylius\Component\Core\Model\ProductInterface;
 use Sylius\Component\Core\Model\ProductTranslationInterface;
 use Sylius\Component\Core\Model\ProductVariantInterface;
-use Sylius\Component\Core\Repository\ProductRepositoryInterface;
 use Sylius\Component\Currency\Model\CurrencyInterface;
 use Sylius\Component\Product\Model\ProductVariantTranslationInterface;
 
@@ -130,8 +130,8 @@ final class ProductFeedDescriptionTest extends TestCase
         $product->method('getEnabledVariants')
             ->willReturn(new \Doctrine\Common\Collections\ArrayCollection([$variant]));
 
-        $repository = $this->createStub(ProductRepositoryInterface::class);
-        $repository->method('findLatestByChannel')->willReturn([$product]);
+        $repository = $this->createStub(FeedProductSource::class);
+        $repository->method('findPage')->willReturn([$product]);
 
         $feed = (new ProductFeedBuilder($repository, null))->build($this->context());
         $item = $feed['items'][0];

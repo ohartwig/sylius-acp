@@ -8,6 +8,7 @@ declare(strict_types=1);
 use Koh\SyliusAcp\Agent\AcpAgentProvider;
 use Koh\SyliusAcp\Controller\AcpDiscoveryController;
 use Koh\SyliusAcp\Controller\ProductFeedController;
+use Koh\SyliusAcp\Feed\DoctrineFeedProductSource;
 use Koh\SyliusAcp\Feed\ProductFeedBuilder;
 use Koh\SyliusAgentContracts\Context\AgentContextFactoryInterface;
 use Koh\SyliusAgentContracts\Http\AgentJsonResponder;
@@ -19,12 +20,16 @@ use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 return static function (ContainerConfigurator $container): void {
     $services = $container->services();
 
+    $services->set(DoctrineFeedProductSource::class)
+        ->args([service('sylius.repository.product')]);
+
     $services->set(ProductFeedBuilder::class)
         ->args([
-            service('sylius.repository.product'),
+            service(DoctrineFeedProductSource::class),
             param('koh_acp.age_restriction'),
             param('koh_acp.feed.default_limit'),
             param('koh_acp.feed.max_limit'),
+            param('koh_acp.feed.max_page'),
         ])
         ->public();
 

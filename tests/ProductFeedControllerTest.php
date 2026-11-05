@@ -8,13 +8,13 @@ declare(strict_types=1);
 namespace Koh\SyliusAcp\Tests;
 
 use Koh\SyliusAcp\Controller\ProductFeedController;
+use Koh\SyliusAcp\Feed\FeedProductSource;
 use Koh\SyliusAcp\Feed\ProductFeedBuilder;
 use Koh\SyliusAgentContracts\Context\AgentContext;
 use Koh\SyliusAgentContracts\Context\AgentContextFactoryInterface;
 use Koh\SyliusAgentContracts\Http\AgentJsonResponder;
 use PHPUnit\Framework\TestCase;
 use Sylius\Component\Core\Model\ChannelInterface;
-use Sylius\Component\Core\Repository\ProductRepositoryInterface;
 use Sylius\Component\Currency\Model\CurrencyInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -111,8 +111,8 @@ final class ProductFeedControllerTest extends TestCase
 
     private function call(Request $request): Response
     {
-        $repository = $this->createStub(ProductRepositoryInterface::class);
-        $repository->method('findLatestByChannel')->willReturn([]);
+        $repository = $this->createStub(FeedProductSource::class);
+        $repository->method('findPage')->willReturn([]);
 
         $factory = $this->createStub(AgentContextFactoryInterface::class);
         $factory->method('create')->willReturn($this->context());
