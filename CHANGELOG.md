@@ -1,3 +1,9 @@
+## [1.1.46](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/compare/v1.1.45...v1.1.46) (2026-11-05)
+
+### :bug: Fixes
+
+* **security:** cut the feed page in the query and cap the page number ([f599a26](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/commit/f599a26e88c592cfe7b65b99c7b8d2e15737432f))
+
 ## [1.1.45](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/compare/v1.1.44...v1.1.45) (2026-11-04)
 
 ### :bug: Fixes
