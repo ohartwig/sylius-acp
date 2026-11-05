@@ -1,3 +1,9 @@
+## [1.3.0](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/compare/v1.2.1...v1.3.0) (2026-11-05)
+
+### :sparkles: Features
+
+* **feed:** publish the ACP product feed to agents ([e137b33](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/commit/e137b330a33aae55026216b4bf9fee622d93f24b))
+
 ## [1.2.1](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/compare/v1.2.0...v1.2.1) (2026-11-05)
 
 ### :bug: Fixes
