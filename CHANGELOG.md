@@ -1,3 +1,9 @@
+## [1.1.47](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/compare/v1.1.46...v1.1.47) (2026-11-05)
+
+### :bug: Fixes
+
+* **discovery:** declare ACP 2026-04-17 and no service the bundle lacks ([f2c7810](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/commit/f2c78102e727b4a2a914d9f91aca75062aed0c0b))
+
 ## [1.1.46](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/compare/v1.1.45...v1.1.46) (2026-11-05)
 
 ### :bug: Fixes
