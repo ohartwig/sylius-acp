@@ -13,8 +13,8 @@ use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigura
 use Symfony\Component\HttpKernel\Bundle\AbstractBundle;
 
 /**
- * ACP discovery, the ACP cart service with its buyer handoff, and the
- * agent-facing product feed.
+ * ACP discovery, the ACP cart service with its buyer handoff, publication of
+ * the ACP product feed to agents, and the shop's own catalogue endpoint.
  */
 final class KohSyliusAcpBundle extends AbstractBundle
 {
@@ -70,7 +70,61 @@ final class KohSyliusAcpBundle extends AbstractBundle
                     ->defaultNull()
                     ->info('Minimum age, carried on every feed item. Set it for age-restricted catalogues.')
                 ->end()
+                ->arrayNode('acp_feed')
+                    ->info('The ACP product feed (schema.feed.json), published to an agent: koh:acp:feed:export writes the offline snapshot, koh:acp:feed:push upserts to the agent-hosted Feed API. Nothing runs unless a command is called.')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->scalarNode('feed_id')
+                            ->defaultNull()
+                            ->info('Feed id the agent issued (POST /feeds, or koh:acp:feed:create). Use an env var: %env(default::ACP_FEED_ID)%.')
+                        ->end()
+                        ->scalarNode('channel')->defaultNull()->info('Channel code; default: the only enabled channel.')->end()
+                        ->scalarNode('locale')->defaultNull()->info('Locale code; default: the channel default locale.')->end()
+                        ->scalarNode('target_country')
+                            ->defaultNull()
+                            ->info('ISO 3166-1 alpha-2; default: the channel\'s only country, else the shop billing country.')
+                        ->end()
+                        ->scalarNode('media_path_prefix')
+                            ->defaultValue('/media/image/')
+                            ->info('Public path under which product image paths are served, e.g. a warmed LiipImagine rendition: /media/cache/sylius_shop_product_large_thumbnail/.')
+                        ->end()
+                        ->integerNode('batch_size')->defaultValue(100)->min(1)->max(1000)->end()
+                        ->arrayNode('seller')
+                            ->addDefaultsIfNotSet()
+                            ->children()
+                                ->scalarNode('name')->defaultNull()->info('Default: the shop billing company, else the channel name.')->end()
+                                ->arrayNode('links')
+                                    ->info('Policy links: type (privacy_policy, terms_of_service, refund_policy, shipping_policy, faq, …), url, title.')
+                                    ->arrayPrototype()
+                                        ->children()
+                                            ->scalarNode('type')->isRequired()->cannotBeEmpty()->end()
+                                            ->scalarNode('url')
+                                                ->isRequired()
+                                                ->validate()
+                                                    ->ifTrue(static fn (mixed $url): bool => !\is_string($url) || 1 !== preg_match('#^https?://[^/]+#', $url))
+                                                    ->thenInvalid('Seller link url must be absolute: %s')
+                                                ->end()
+                                            ->end()
+                                            ->scalarNode('title')->defaultNull()->end()
+                                        ->end()
+                                    ->end()
+                                ->end()
+                            ->end()
+                        ->end()
+                        ->arrayNode('api')
+                            ->info('Agent-hosted Feed API. Off while base_url or bearer_token is empty.')
+                            ->addDefaultsIfNotSet()
+                            ->children()
+                                ->scalarNode('base_url')->defaultValue('')->info('https:// base URL of the agent\'s Feed API; /feeds is appended. Use an env var.')->end()
+                                ->scalarNode('bearer_token')->defaultValue('')->info('Token the agent issued. Use an env var: %env(ACP_FEED_API_TOKEN)%.')->end()
+                                ->floatNode('timeout')->defaultValue(30.0)->min(1.0)->end()
+                                ->integerNode('max_attempts')->defaultValue(3)->min(1)->max(10)->info('Attempts per request; 429, 5xx and broken connections are retried with the same Idempotency-Key.')->end()
+                            ->end()
+                        ->end()
+                    ->end()
+                ->end()
                 ->arrayNode('feed')
+                    ->info('The catalogue endpoint {api_base}/feed: a shop-specific JSON listing and search for in-page tools, not the ACP product feed.')
                     ->addDefaultsIfNotSet()
                     ->children()
                         ->integerNode('default_limit')->defaultValue(100)->end()
@@ -92,6 +146,9 @@ final class KohSyliusAcpBundle extends AbstractBundle
     {
         $feed = \is_array($config['feed'] ?? null) ? $config['feed'] : [];
         $carts = \is_array($config['carts'] ?? null) ? $config['carts'] : [];
+        $acpFeed = \is_array($config['acp_feed'] ?? null) ? $config['acp_feed'] : [];
+        $seller = \is_array($acpFeed['seller'] ?? null) ? $acpFeed['seller'] : [];
+        $api = \is_array($acpFeed['api'] ?? null) ? $acpFeed['api'] : [];
 
         $builder->setParameter('koh_acp.version', (string) ($config['version'] ?? '2026-04-17'));
         $builder->setParameter('koh_acp.api_base', (string) ($config['api_base'] ?? '/api/agent'));
@@ -108,6 +165,18 @@ final class KohSyliusAcpBundle extends AbstractBundle
         $builder->setParameter('koh_acp.feed.default_limit', (int) ($feed['default_limit'] ?? 100));
         $builder->setParameter('koh_acp.feed.max_limit', (int) ($feed['max_limit'] ?? 500));
         $builder->setParameter('koh_acp.feed.max_page', (int) ($feed['max_page'] ?? 1000));
+        $builder->setParameter('koh_acp.acp_feed.feed_id', $acpFeed['feed_id'] ?? null);
+        $builder->setParameter('koh_acp.acp_feed.channel', $acpFeed['channel'] ?? null);
+        $builder->setParameter('koh_acp.acp_feed.locale', $acpFeed['locale'] ?? null);
+        $builder->setParameter('koh_acp.acp_feed.target_country', $acpFeed['target_country'] ?? null);
+        $builder->setParameter('koh_acp.acp_feed.media_path_prefix', (string) ($acpFeed['media_path_prefix'] ?? '/media/image/'));
+        $builder->setParameter('koh_acp.acp_feed.batch_size', (int) ($acpFeed['batch_size'] ?? 100));
+        $builder->setParameter('koh_acp.acp_feed.seller.name', $seller['name'] ?? null);
+        $builder->setParameter('koh_acp.acp_feed.seller.links', \is_array($seller['links'] ?? null) ? array_values($seller['links']) : []);
+        $builder->setParameter('koh_acp.acp_feed.api.base_url', $api['base_url'] ?? '');
+        $builder->setParameter('koh_acp.acp_feed.api.bearer_token', $api['bearer_token'] ?? '');
+        $builder->setParameter('koh_acp.acp_feed.api.timeout', (float) ($api['timeout'] ?? 30.0));
+        $builder->setParameter('koh_acp.acp_feed.api.max_attempts', (int) ($api['max_attempts'] ?? 3));
 
         $container->import('../config/services.php');
     }

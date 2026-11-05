@@ -27,3 +27,12 @@ path = [
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 Kai Ole Hartwig"
 SPDX-License-Identifier = "MIT"
+
+# The ACP 2026-04-17 feed JSON schema, copied unchanged from
+# github.com/agentic-commerce-protocol/agentic-commerce-protocol
+# (spec/2026-04-17/json-schema/schema.feed.json) to validate test output.
+[[annotations]]
+path = ["tests/Fixtures/acp/**"]
+precedence = "override"
+SPDX-FileCopyrightText = ["2025 OpenAI", "2025 Stripe"]
+SPDX-License-Identifier = "Apache-2.0"

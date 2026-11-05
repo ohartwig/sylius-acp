@@ -12,7 +12,9 @@ use Sylius\Component\Core\Model\ProductInterface;
 use Sylius\Component\Core\Model\ProductVariantInterface;
 
 /**
- * Builds the agent-facing product feed.
+ * Builds the answer of the catalogue endpoint ({api_base}/feed): a
+ * shop-specific JSON listing, not the ACP product feed — that one is
+ * ProductFeed\AcpFeedBuilder.
  *
  * SKU-granular: one entry per variant, not per product. An agent comparing
  * prices needs the thing it can actually buy, and a product with three sizes at

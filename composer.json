@@ -1,6 +1,6 @@
 {
     "name": "koh/sylius-acp",
-    "description": "Agentic Commerce Protocol for Sylius: ACP carts with a buyer handoff, /.well-known/acp.json and a read-only product feed for agents.",
+    "description": "Agentic Commerce Protocol for Sylius: ACP carts with a buyer handoff, /.well-known/acp.json, and the ACP product feed published to agents (JSONL snapshot or Feed API upsert).",
     "type": "sylius-bundle",
     "license": "MIT",
     "keywords": [
@@ -32,9 +32,11 @@
         "sylius/resource": "^1.14.2",
         "sylius/sylius": "^2.2.9 || ^2.3.0",
         "symfony/config": "^7.4 || ^8.0",
+        "symfony/console": "^7.4 || ^8.0",
         "symfony/dependency-injection": "^7.4 || ^8.0",
         "symfony/event-dispatcher": "^7.4 || ^8.0",
         "symfony/event-dispatcher-contracts": "^3.8.1",
+        "symfony/http-client-contracts": "^3.6",
         "symfony/http-foundation": "^7.4 || ^8.0",
         "symfony/http-kernel": "^7.4 || ^8.0",
         "symfony/rate-limiter": "^7.4 || ^8.0",
@@ -44,11 +46,13 @@
     "require-dev": {
         "doctrine/collections": "^2.6.0",
         "koh/dev-sylius": "^1.0",
+        "opis/json-schema": "^2.4",
         "phpstan/extension-installer": "^1.4.3",
         "phpstan/phpstan": "^2.3.5",
         "phpstan/phpstan-doctrine": "^2.1.0",
         "phpunit/phpunit": "^11.5.57",
-        "symfony/cache": "^7.4 || ^8.0"
+        "symfony/cache": "^7.4 || ^8.0",
+        "symfony/http-client": "^7.4 || ^8.0"
     },
     "autoload": {
         "psr-4": {

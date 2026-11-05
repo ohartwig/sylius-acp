@@ -7,6 +7,9 @@ declare(strict_types=1);
 
 use Koh\SyliusAcp\Agent\AcpAgentProvider;
 use Koh\SyliusAcp\Cart\AgentCartStore;
+use Koh\SyliusAcp\Command\CreateFeedCommand;
+use Koh\SyliusAcp\Command\ExportFeedCommand;
+use Koh\SyliusAcp\Command\PushFeedCommand;
 use Koh\SyliusAcp\Cart\CartPresenter;
 use Koh\SyliusAcp\Cart\CartRequestParser;
 use Koh\SyliusAcp\Controller\AcpDiscoveryController;
@@ -17,6 +20,13 @@ use Koh\SyliusAcp\Feed\DoctrineFeedProductSource;
 use Koh\SyliusAcp\Feed\ProductFeedBuilder;
 use Koh\SyliusAcp\Http\BearerTokenAuthenticator;
 use Koh\SyliusAcp\Http\IdempotencyStore;
+use Koh\SyliusAcp\ProductFeed\AcpFeedBuilder;
+use Koh\SyliusAcp\ProductFeed\AcpProductMapper;
+use Koh\SyliusAcp\ProductFeed\Api\FeedApiClient;
+use Koh\SyliusAcp\ProductFeed\DoctrineCatalogueStream;
+use Koh\SyliusAcp\ProductFeed\FeedPusher;
+use Koh\SyliusAcp\ProductFeed\FeedScopeFactory;
+use Koh\SyliusAcp\ProductFeed\JsonlFeedWriter;
 use Koh\SyliusAgentContracts\Context\AgentContextFactoryInterface;
 use Koh\SyliusAgentContracts\Http\AgentJsonResponder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
@@ -136,6 +146,74 @@ return static function (ContainerConfigurator $container): void {
         ])
         ->public()
         ->tag('controller.service_arguments');
+
+    // ACP product feed, published to an agent. Only commands use these; no
+    // route serves the ACP feed, because in ACP the agent hosts the Feed API.
+    $services->set(DoctrineCatalogueStream::class)
+        ->args([service('sylius.repository.product'), service('sylius.manager.product')]);
+
+    $services->set(AcpProductMapper::class)
+        ->args([service('sylius.checker.inventory.availability')]);
+
+    $services->set(AcpFeedBuilder::class)
+        ->args([
+            service(DoctrineCatalogueStream::class),
+            service(AcpProductMapper::class),
+            param('koh_acp.acp_feed.batch_size'),
+        ]);
+
+    $services->set(FeedScopeFactory::class)
+        ->args([
+            service('sylius.repository.channel'),
+            service(AgentContextFactoryInterface::class),
+            param('koh_acp.acp_feed.channel'),
+            param('koh_acp.acp_feed.locale'),
+            param('koh_acp.acp_feed.target_country'),
+            param('koh_acp.acp_feed.seller.name'),
+            param('koh_acp.acp_feed.seller.links'),
+            param('koh_acp.acp_feed.media_path_prefix'),
+        ]);
+
+    $services->set(JsonlFeedWriter::class);
+
+    $services->set(FeedApiClient::class)
+        ->args([
+            service('http_client'),
+            param('koh_acp.acp_feed.api.base_url'),
+            param('koh_acp.acp_feed.api.bearer_token'),
+            param('koh_acp.version'),
+            param('koh_acp.acp_feed.api.timeout'),
+            param('koh_acp.acp_feed.api.max_attempts'),
+        ]);
+
+    $services->set(FeedPusher::class)
+        ->args([
+            service(AcpFeedBuilder::class),
+            service(FeedApiClient::class),
+            param('koh_acp.acp_feed.batch_size'),
+        ]);
+
+    $services->set(ExportFeedCommand::class)
+        ->args([
+            service(FeedScopeFactory::class),
+            service(AcpFeedBuilder::class),
+            service(JsonlFeedWriter::class),
+            param('koh_acp.acp_feed.feed_id'),
+        ])
+        ->tag('console.command');
+
+    $services->set(PushFeedCommand::class)
+        ->args([
+            service(FeedScopeFactory::class),
+            service(FeedPusher::class),
+            service(FeedApiClient::class),
+            param('koh_acp.acp_feed.feed_id'),
+        ])
+        ->tag('console.command');
+
+    $services->set(CreateFeedCommand::class)
+        ->args([service(FeedScopeFactory::class), service(FeedApiClient::class)])
+        ->tag('console.command');
 
     $services->set(AcpAgentProvider::class)
         ->args([param('koh_acp.api_base'), param('koh_acp.checkout'), param('koh_acp.carts.enabled')])
