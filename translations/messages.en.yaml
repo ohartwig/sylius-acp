@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Kai Ole Hartwig
+# SPDX-License-Identifier: MIT
+koh_acp:
+    cart_handoff:
+        added: 'The items your assistant picked are in your cart.'
+        blocked: 'Your assistant''s cart could not be taken over yet. Please follow the shop''s prompt (for example the age confirmation), then open the link again.'
+        expired: 'This cart link has expired. Your assistant can put the cart together again.'

@@ -121,6 +121,29 @@ final class AcpAgentProviderTest extends TestCase
         self::assertNotSame('', $skill->description);
     }
 
+    public function testWithCartsTheDiscoveryDocumentAndTheCartSkillAreAnnounced(): void
+    {
+        $provider = new AcpAgentProvider(cartsEnabled: true);
+        $endpoints = iterator_to_array($provider->getAgentEndpoints($this->context()));
+
+        self::assertCount(2, $endpoints);
+        self::assertSame('/.well-known/acp.json', $endpoints[0]->path);
+        self::assertSame('acp', $endpoints[0]->protocol);
+        self::assertSame('Agentic Commerce Protocol: carts an agent builds and hands to the buyer to check out.', $endpoints[0]->description);
+
+        $entry = iterator_to_array($provider->getApiCatalogEntries($this->context()))[0];
+        self::assertSame('https://shop.example.com/.well-known/acp.json', $entry->describedBy[0]->href);
+
+        $skills = iterator_to_array($provider->getAgentSkills($this->context()));
+        self::assertCount(2, $skills);
+        self::assertSame('acp-carts', $skills[1]->id);
+        self::assertSame('Cart handoff', $skills[1]->name);
+        self::assertSame(['commerce', 'cart', 'acp'], $skills[1]->tags);
+        self::assertSame(['application/json'], $skills[1]->inputModes);
+        self::assertSame(['application/json'], $skills[1]->outputModes);
+        self::assertStringContainsString('continue_url', $skills[1]->description);
+    }
+
     public function testItImplementsAllThreeProviderInterfaces(): void
     {
         $provider = new AcpAgentProvider();

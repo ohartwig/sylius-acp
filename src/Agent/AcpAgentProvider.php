@@ -20,9 +20,8 @@ use Koh\SyliusAgentContracts\Provider\ApiCatalogEntryProviderInterface;
  * Announces the product feed, the ACP discovery document where one exists, and
  * registers the catalogue as a skill.
  *
- * The discovery document answers 404 unless `koh_acp.checkout` is on (the
- * bundle implements no ACP service of its own), so it is announced only then:
- * llms.txt and the api-catalog must not point at a 404.
+ * The discovery document answers 404 unless carts or checkout are on, so it is
+ * announced only then: llms.txt and the api-catalog must not point at a 404.
  *
  * Registering the skill is what makes "browse this shop's catalogue" show up in
  * the A2A card, the agent-skills index and the MCP server card without any of
@@ -36,17 +35,20 @@ final class AcpAgentProvider implements
     public function __construct(
         private readonly string $apiBase = '/api/agent',
         private readonly bool $checkoutEnabled = false,
+        private readonly bool $cartsEnabled = false,
     ) {
     }
 
     public function getAgentEndpoints(AgentContext $context): iterable
     {
-        if ($this->checkoutEnabled) {
+        if ($this->checkoutEnabled || $this->cartsEnabled) {
             yield new AgentEndpoint(
                 path: '/.well-known/acp.json',
                 title: 'ACP discovery',
                 protocol: 'acp',
-                description: 'Agentic Commerce Protocol: checkout for agents.',
+                description: $this->checkoutEnabled
+                    ? 'Agentic Commerce Protocol: checkout for agents.'
+                    : 'Agentic Commerce Protocol: carts an agent builds and hands to the buyer to check out.',
             );
         }
 
@@ -61,7 +63,7 @@ final class AcpAgentProvider implements
     {
         yield new ApiCatalogEntry(
             anchor: $context->url($this->apiBase),
-            describedBy: $this->checkoutEnabled
+            describedBy: $this->checkoutEnabled || $this->cartsEnabled
                 ? [new LinkTarget($context->url('/.well-known/acp.json'), 'application/json')]
                 : [],
             title: 'Agent commerce API',
@@ -77,5 +79,16 @@ final class AcpAgentProvider implements
             tags: ['commerce', 'catalog'],
             outputModes: ['application/json'],
         );
+
+        if ($this->cartsEnabled) {
+            yield new AgentSkill(
+                id: 'acp-carts',
+                name: 'Cart handoff',
+                description: 'Build a cart with estimated totals and hand it to the buyer, who checks out in the shop (ACP carts, continue_url). Needs an API key from the shop.',
+                tags: ['commerce', 'cart', 'acp'],
+                inputModes: ['application/json'],
+                outputModes: ['application/json'],
+            );
+        }
     }
 }

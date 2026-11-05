@@ -19,16 +19,16 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
  *
  * `capabilities.services` is a closed enum (checkout, orders, delegate_payment,
  * carts) and lists ACP operations the seller implements. This bundle
- * implements none of them: the product feed under `api_base` is not an ACP
- * resource. So the document exists only when the installation declares that
- * it serves ACP checkout (`koh_acp.checkout`). Without that it answers 404,
- * which the discovery RFC defines as "this seller does not support ACP" — an
- * agent then does not call `{api_base_url}/checkout_sessions` blindly.
+ * implements `carts` (CartController); the product feed is not an ACP
+ * resource. `checkout` is listed only when the installation declares that it
+ * serves checkout sessions itself (`koh_acp.checkout`). With neither, the
+ * document answers 404, which the discovery RFC defines as "this seller does
+ * not support ACP".
  *
- * Checkout also stays off by default because an agent that reads it will try
- * to complete a purchase through the API — and for a shop with an
- * age-restricted catalogue that has to happen in a browser session where the
- * buyer can be verified.
+ * Checkout stays off by default because an agent that reads it will try to
+ * complete a purchase through the API — and for a shop with an age-restricted
+ * catalogue that has to happen in a browser session where the buyer can be
+ * verified. Carts end in exactly that session (`continue_url`).
  */
 final class AcpDiscoveryController
 {
@@ -38,12 +38,20 @@ final class AcpDiscoveryController
         private readonly string $version = '2026-04-17',
         private readonly string $apiBase = '/api/agent',
         private readonly bool $checkoutEnabled = false,
+        private readonly bool $cartsEnabled = false,
     ) {
     }
 
     public function __invoke(Request $request): Response
     {
-        if (!$this->checkoutEnabled) {
+        $services = [];
+        if ($this->checkoutEnabled) {
+            $services[] = 'checkout';
+        }
+        if ($this->cartsEnabled) {
+            $services[] = 'carts';
+        }
+        if ([] === $services) {
             throw new NotFoundHttpException('This shop declares no ACP service.');
         }
 
@@ -60,7 +68,7 @@ final class AcpDiscoveryController
             'api_base_url' => $context->url($this->apiBase),
             'transports' => ['rest'],
             'capabilities' => [
-                'services' => ['checkout'],
+                'services' => $services,
                 'supported_currencies' => null === $currency ? [] : [strtolower($currency)],
                 'supported_locales' => array_map(
                     static fn (string $l): string => str_replace('_', '-', $l),

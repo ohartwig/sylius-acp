@@ -63,6 +63,13 @@ final class AcpTest extends TestCase
         self::assertSame(['checkout'], $this->discovery(checkout: true)['capabilities']['services']);
     }
 
+    /** carts is the service this bundle implements itself. */
+    public function testCartsAreDeclaredWhenSwitchedOn(): void
+    {
+        self::assertSame(['carts'], $this->discovery(carts: true)['capabilities']['services']);
+        self::assertSame(['checkout', 'carts'], $this->discovery(checkout: true, carts: true)['capabilities']['services']);
+    }
+
     public function testTheDocumentIsPubliclyCacheableForAnHour(): void
     {
         $response = $this->controller(checkout: true)(new Request());
@@ -139,18 +146,18 @@ final class AcpTest extends TestCase
     }
 
     /** @return array<string, mixed> */
-    private function discovery(bool $checkout = false): array
+    private function discovery(bool $checkout = false, bool $carts = false): array
     {
         /** @var array<string, mixed> $decoded */
-        $decoded = json_decode((string) $this->controller($checkout)(new Request())->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+        $decoded = json_decode((string) $this->controller($checkout, $carts)(new Request())->getContent(), true, 512, \JSON_THROW_ON_ERROR);
 
         return $decoded;
     }
 
-    private function controller(bool $checkout): AcpDiscoveryController
+    private function controller(bool $checkout, bool $carts = false): AcpDiscoveryController
     {
         // The defaults are what an installation gets without configuration.
-        return new AcpDiscoveryController($this->contextFactory(), new AgentJsonResponder(), checkoutEnabled: $checkout);
+        return new AcpDiscoveryController($this->contextFactory(), new AgentJsonResponder(), checkoutEnabled: $checkout, cartsEnabled: $carts);
     }
 
     /** @return array{items: list<array<string, mixed>>, page: int, limit: int, count: int} */
