@@ -1,3 +1,9 @@
+## [1.2.1](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/compare/v1.2.0...v1.2.1) (2026-11-05)
+
+### :bug: Fixes
+
+* **deps:** update dependency symfony/event-dispatcher-contracts to ^3.8.1 ([6382463](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/commit/63824635412c201f7a69a685c5f64fd1087275a2))
+
 ## [1.2.0](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/compare/v1.1.48...v1.2.0) (2026-11-05)
 
 ### :sparkles: Features
