@@ -9,8 +9,9 @@ SPDX-License-Identifier: MIT
 Sylius: a discovery document at `/.well-known/acp.json` and a read-only,
 SKU-level product feed agents can browse.
 
-- **Discovery document** — protocol version, API base URL, transports and the
-  channel's currency and locales, per channel.
+- **Discovery document** (ACP 2026-04-17) — protocol version, API base URL,
+  transports and the channel's currency and locales, per channel. Served only
+  when the installation declares ACP checkout; otherwise `404`, see below.
 - **Product feed** — one entry per enabled variant, with price in minor units,
   currency, availability and an optional age restriction.
 - **Read-only by default** — checkout is not declared unless you switch it on.
@@ -49,8 +50,8 @@ Clear the cache and check that both endpoints answer:
 
 ```bash
 bin/console cache:clear
-curl -s https://shop.example.com/.well-known/acp.json
 curl -s 'https://shop.example.com/api/agent/feed?limit=2'
+curl -si https://shop.example.com/.well-known/acp.json   # 404 unless checkout is on
 ```
 
 ## Configure
@@ -60,9 +61,9 @@ Everything has a default; the file is only needed to change one:
 ```yaml
 # config/packages/koh_acp.yaml
 koh_acp:
-    version: '2026-01-30'     # ACP version announced in the discovery document
+    version: '2026-04-17'     # ACP version announced in the discovery document
     api_base: '/api/agent'    # advertised as api_base_url
-    checkout: false           # declare the checkout service
+    checkout: false           # declare ACP checkout (served by the installation)
     age_restriction: ~        # minimum age carried on every feed item
     feed:
         default_limit: 100
@@ -73,27 +74,35 @@ koh_acp:
 - `api_base` is announced, not routed. The feed route is fixed at
   `/api/agent/feed`; if you change `api_base`, add a route for
   `{api_base}/feed` pointing at `Koh\SyliusAcp\Controller\ProductFeedController`.
-- `checkout` stays off unless the shop really completes purchases through the
-  API. An agent that finds `checkout` in the capabilities will try to buy.
+- `checkout` stays off unless the installation really serves ACP checkout
+  sessions (`{api_base}/checkout_sessions`); this bundle does not implement
+  them. An agent that finds `checkout` in the capabilities will try to buy.
+- ACP's `capabilities.services` is a closed list of ACP operations (checkout,
+  orders, delegate_payment, carts). The product feed is not one of them, so
+  with `checkout` off the shop offers no ACP service and
+  `/.well-known/acp.json` answers `404` — the discovery RFC's signal for "this
+  seller does not support ACP". llms.txt and the api-catalog then do not
+  announce it either; the feed stays announced.
 - `age_restriction` belongs on every age-restricted catalogue. A feed that omits
   it invites an agent to treat restricted items as ordinary stock.
 
 ## Output
 
-`GET /.well-known/acp.json`:
+`GET /.well-known/acp.json` with `checkout: true` (validates against
+`DiscoveryResponse` of ACP 2026-04-17):
 
 ```json
 {
   "protocol": {
     "name": "acp",
-    "version": "2026-01-30",
-    "supported_versions": ["2026-01-30"],
+    "version": "2026-04-17",
+    "supported_versions": ["2026-04-17"],
     "documentation_url": "https://agenticcommerce.dev"
   },
   "api_base_url": "https://shop.example.com/api/agent",
   "transports": ["rest"],
   "capabilities": {
-    "services": ["catalog"],
+    "services": ["checkout"],
     "supported_currencies": ["eur"],
     "supported_locales": ["en-US", "de-DE"]
   }

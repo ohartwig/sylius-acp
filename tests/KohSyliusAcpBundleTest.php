@@ -61,7 +61,8 @@ final class KohSyliusAcpBundleTest extends TestCase
     {
         $config = $this->processConfig([]);
 
-        self::assertSame('2026-01-30', $config['version']);
+        self::assertSame('2026-04-17', $config['version']);
+        self::assertSame('2026-04-17', $this->loadExtension([])->getParameter('koh_acp.version'));
         self::assertSame('/api/agent', $config['api_base']);
         self::assertSame(100, $config['feed']['default_limit']);
         self::assertSame(500, $config['feed']['max_limit']);

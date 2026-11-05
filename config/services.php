@@ -54,7 +54,7 @@ return static function (ContainerConfigurator $container): void {
         ->tag('controller.service_arguments');
 
     $services->set(AcpAgentProvider::class)
-        ->args([param('koh_acp.api_base')])
+        ->args([param('koh_acp.api_base'), param('koh_acp.checkout')])
         ->tag('koh_agent.endpoint')
         ->tag('koh_agent.api_catalog_entry')
         ->tag('koh_agent.skill');
