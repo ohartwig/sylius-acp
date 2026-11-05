@@ -33,21 +33,31 @@ use Sylius\Component\Currency\Model\CurrencyInterface;
  */
 final class AcpAgentProviderTest extends TestCase
 {
-    public function testItAnnouncesDiscoveryAndFeed(): void
+    public function testItAnnouncesDiscoveryAndFeedWhenCheckoutIsOn(): void
     {
-        $endpoints = iterator_to_array((new AcpAgentProvider())->getAgentEndpoints($this->context()));
+        $endpoints = iterator_to_array((new AcpAgentProvider(checkoutEnabled: true))->getAgentEndpoints($this->context()));
 
         self::assertCount(2, $endpoints);
         self::assertSame('/.well-known/acp.json', $endpoints[0]->path);
         self::assertSame('/api/agent/feed', $endpoints[1]->path);
         self::assertContainsOnlyInstancesOf(AgentEndpoint::class, $endpoints);
+        self::assertSame('Agentic Commerce Protocol: checkout for agents.', $endpoints[0]->description);
+    }
+
+    /** Without checkout the discovery document answers 404, so nothing may point at it. */
+    public function testWithoutCheckoutOnlyTheFeedIsAnnounced(): void
+    {
+        $endpoints = iterator_to_array((new AcpAgentProvider())->getAgentEndpoints($this->context()));
+
+        self::assertCount(1, $endpoints);
+        self::assertSame('/api/agent/feed', $endpoints[0]->path);
     }
 
     public function testOnlyTheDiscoveryEndpointClaimsTheAcpProtocol(): void
     {
         // The feed is a plain JSON endpoint. Tagging it `acp` too would make a
         // client filtering by protocol treat it as a second discovery document.
-        $endpoints = iterator_to_array((new AcpAgentProvider())->getAgentEndpoints($this->context()));
+        $endpoints = iterator_to_array((new AcpAgentProvider(checkoutEnabled: true))->getAgentEndpoints($this->context()));
 
         self::assertSame('acp', $endpoints[0]->protocol);
         self::assertNotSame('acp', $endpoints[1]->protocol);
@@ -58,7 +68,7 @@ final class AcpAgentProviderTest extends TestCase
         // api_base is configurable and the route has to be changed with it.
         // If this ever stopped being honoured, the shop would advertise a feed
         // at a path it does not serve.
-        $endpoints = iterator_to_array((new AcpAgentProvider('/custom/base'))->getAgentEndpoints($this->context()));
+        $endpoints = iterator_to_array((new AcpAgentProvider('/custom/base', true))->getAgentEndpoints($this->context()));
 
         self::assertSame('/custom/base/feed', $endpoints[1]->path);
         self::assertSame('/.well-known/acp.json', $endpoints[0]->path, 'well-known is fixed by the spec');
@@ -75,9 +85,16 @@ final class AcpAgentProviderTest extends TestCase
         self::assertSame('https://shop.example.com/api/agent', $entries[0]->anchor);
     }
 
-    public function testTheCatalogueEntryDescribesItselfWithTheDiscoveryDocument(): void
+    public function testWithoutCheckoutTheCatalogueEntryDoesNotPointAtTheMissingDocument(): void
     {
         $entry = iterator_to_array((new AcpAgentProvider())->getApiCatalogEntries($this->context()))[0];
+
+        self::assertSame([], $entry->describedBy);
+    }
+
+    public function testTheCatalogueEntryDescribesItselfWithTheDiscoveryDocument(): void
+    {
+        $entry = iterator_to_array((new AcpAgentProvider(checkoutEnabled: true))->getApiCatalogEntries($this->context()))[0];
 
         self::assertCount(1, $entry->describedBy);
         self::assertSame('https://shop.example.com/.well-known/acp.json', $entry->describedBy[0]->href);

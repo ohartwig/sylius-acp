@@ -22,40 +22,62 @@ use Sylius\Component\Core\Model\ProductVariantInterface;
 use Sylius\Component\Currency\Model\CurrencyInterface;
 use Sylius\Component\Product\Model\ProductVariantTranslationInterface;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 final class AcpTest extends TestCase
 {
     public function testDiscoveryDocumentIdentifiesTheProtocol(): void
     {
-        $doc = $this->discovery();
+        $doc = $this->discovery(checkout: true);
 
-        self::assertSame('acp', $doc['protocol']['name']);
-        self::assertSame('2026-01-30', $doc['protocol']['version']);
+        self::assertSame([
+            'name' => 'acp',
+            'version' => '2026-04-17',
+            'supported_versions' => ['2026-04-17'],
+            'documentation_url' => 'https://agenticcommerce.dev',
+        ], $doc['protocol']);
         self::assertSame(['rest'], $doc['transports']);
         self::assertSame('https://shop.example.com/api/agent', $doc['api_base_url']);
+        self::assertSame(['protocol', 'api_base_url', 'transports', 'capabilities'], array_keys($doc));
+    }
+
+    /**
+     * `services` is a closed enum of ACP operations. The bundle implements none
+     * of them, so without checkout there is nothing to declare, and the
+     * discovery RFC's answer for "no ACP" is 404.
+     */
+    public function testWithoutCheckoutThereIsNoDiscoveryDocument(): void
+    {
+        $this->expectException(NotFoundHttpException::class);
+
+        $this->discovery();
     }
 
     /**
      * An agent reading `checkout` will try to complete a purchase through the
      * API. For an age-restricted catalogue that has to happen in a browser
-     * session where the buyer can be verified.
+     * session where the buyer can be verified, so it is opt-in.
      */
-    public function testCheckoutIsNotDeclaredByDefault(): void
+    public function testCheckoutIsTheOnlyServiceWhenSwitchedOn(): void
     {
-        self::assertSame(['catalog'], $this->discovery()['capabilities']['services']);
+        self::assertSame(['checkout'], $this->discovery(checkout: true)['capabilities']['services']);
     }
 
-    public function testCheckoutAppearsOnlyWhenSwitchedOn(): void
+    public function testTheDocumentIsPubliclyCacheableForAnHour(): void
     {
-        self::assertSame(['catalog', 'checkout'], $this->discovery(checkout: true)['capabilities']['services']);
+        $response = $this->controller(checkout: true)(new Request());
+
+        self::assertSame(200, $response->getStatusCode());
+        self::assertTrue($response->headers->hasCacheControlDirective('public'));
+        self::assertSame('3600', $response->headers->getCacheControlDirective('max-age'));
     }
 
     public function testCurrenciesAndLocalesUseTheirWireFormats(): void
     {
-        $capabilities = $this->discovery()['capabilities'];
+        $capabilities = $this->discovery(checkout: true)['capabilities'];
 
         self::assertSame(['eur'], $capabilities['supported_currencies']);
-        self::assertSame(['de-DE'], $capabilities['supported_locales']);
+        self::assertSame(['de-DE', 'en-GB'], $capabilities['supported_locales']);
     }
 
     /** One row per variant: a product with three prices cannot be one row without lying about two. */
@@ -119,18 +141,16 @@ final class AcpTest extends TestCase
     /** @return array<string, mixed> */
     private function discovery(bool $checkout = false): array
     {
-        $controller = new AcpDiscoveryController(
-            $this->contextFactory(),
-            new AgentJsonResponder(),
-            '2026-01-30',
-            '/api/agent',
-            $checkout,
-        );
-
         /** @var array<string, mixed> $decoded */
-        $decoded = json_decode((string) $controller(new Request())->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+        $decoded = json_decode((string) $this->controller($checkout)(new Request())->getContent(), true, 512, \JSON_THROW_ON_ERROR);
 
         return $decoded;
+    }
+
+    private function controller(bool $checkout): AcpDiscoveryController
+    {
+        // The defaults are what an installation gets without configuration.
+        return new AcpDiscoveryController($this->contextFactory(), new AgentJsonResponder(), checkoutEnabled: $checkout);
     }
 
     /** @return array{items: list<array<string, mixed>>, page: int, limit: int, count: int} */
@@ -195,6 +215,6 @@ final class AcpTest extends TestCase
         $channel->method('getName')->willReturn('Example Shop');
         $channel->method('getBaseCurrency')->willReturn($currency);
 
-        return new AgentContext($channel, 'https://shop.example.com', 'de_DE', ['de_DE']);
+        return new AgentContext($channel, 'https://shop.example.com', 'de_DE', ['de_DE', 'en_GB']);
     }
 }

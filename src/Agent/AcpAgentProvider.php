@@ -17,7 +17,12 @@ use Koh\SyliusAgentContracts\Provider\AgentSkillProviderInterface;
 use Koh\SyliusAgentContracts\Provider\ApiCatalogEntryProviderInterface;
 
 /**
- * Announces the ACP surface and registers the catalogue as a skill.
+ * Announces the product feed, the ACP discovery document where one exists, and
+ * registers the catalogue as a skill.
+ *
+ * The discovery document answers 404 unless `koh_acp.checkout` is on (the
+ * bundle implements no ACP service of its own), so it is announced only then:
+ * llms.txt and the api-catalog must not point at a 404.
  *
  * Registering the skill is what makes "browse this shop's catalogue" show up in
  * the A2A card, the agent-skills index and the MCP server card without any of
@@ -28,18 +33,22 @@ final class AcpAgentProvider implements
     ApiCatalogEntryProviderInterface,
     AgentSkillProviderInterface
 {
-    public function __construct(private readonly string $apiBase = '/api/agent')
-    {
+    public function __construct(
+        private readonly string $apiBase = '/api/agent',
+        private readonly bool $checkoutEnabled = false,
+    ) {
     }
 
     public function getAgentEndpoints(AgentContext $context): iterable
     {
-        yield new AgentEndpoint(
-            path: '/.well-known/acp.json',
-            title: 'ACP discovery',
-            protocol: 'acp',
-            description: 'Agentic Commerce Protocol: catalogue access for agents.',
-        );
+        if ($this->checkoutEnabled) {
+            yield new AgentEndpoint(
+                path: '/.well-known/acp.json',
+                title: 'ACP discovery',
+                protocol: 'acp',
+                description: 'Agentic Commerce Protocol: checkout for agents.',
+            );
+        }
 
         yield new AgentEndpoint(
             path: $this->apiBase.'/feed',
@@ -52,7 +61,9 @@ final class AcpAgentProvider implements
     {
         yield new ApiCatalogEntry(
             anchor: $context->url($this->apiBase),
-            describedBy: [new LinkTarget($context->url('/.well-known/acp.json'), 'application/json')],
+            describedBy: $this->checkoutEnabled
+                ? [new LinkTarget($context->url('/.well-known/acp.json'), 'application/json')]
+                : [],
             title: 'Agent commerce API',
         );
     }

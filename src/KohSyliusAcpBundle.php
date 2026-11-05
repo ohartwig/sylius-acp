@@ -29,14 +29,14 @@ final class KohSyliusAcpBundle extends AbstractBundle
     {
         $definition->rootNode()
             ->children()
-                ->scalarNode('version')->defaultValue('2026-01-30')->end()
+                ->scalarNode('version')->defaultValue('2026-04-17')->end()
                 ->scalarNode('api_base')
                     ->defaultValue('/api/agent')
                     ->info('Advertised as api_base_url. Change the route in config/routes.php to match.')
                 ->end()
                 ->booleanNode('checkout')
                     ->defaultFalse()
-                    ->info('Declare the checkout service. Off by default: an agent reading it there will try to complete a purchase through the API.')
+                    ->info('Declare that this installation serves ACP checkout sessions under api_base; the bundle does not implement them. Off, /.well-known/acp.json answers 404 (no ACP service). An agent reading checkout will try to complete a purchase through the API.')
                 ->end()
                 ->integerNode('age_restriction')
                     ->defaultNull()
@@ -64,7 +64,7 @@ final class KohSyliusAcpBundle extends AbstractBundle
     {
         $feed = \is_array($config['feed'] ?? null) ? $config['feed'] : [];
 
-        $builder->setParameter('koh_acp.version', (string) ($config['version'] ?? '2026-01-30'));
+        $builder->setParameter('koh_acp.version', (string) ($config['version'] ?? '2026-04-17'));
         $builder->setParameter('koh_acp.api_base', (string) ($config['api_base'] ?? '/api/agent'));
         $builder->setParameter('koh_acp.checkout', (bool) ($config['checkout'] ?? false));
         $builder->setParameter('koh_acp.age_restriction', $config['age_restriction'] ?? null);
