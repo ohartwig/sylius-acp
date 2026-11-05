@@ -168,7 +168,11 @@ Routes (fixed, like the feed):
   refuses, nothing is added and the buyer lands on `fallback_route` with a
   notice, and the link works again once the gate is satisfied. Checkout —
   address, age declaration, shipping, payment — is the shop's own. Opening the
-  link twice does not add the items twice.
+  link twice does not add the items twice. The handoff is `CartHandoff` from
+  `koh/sylius-agent-contracts`, shared with the UCP permalink: a gate signals a
+  refusal with an exception implementing its `CartGateRefusalInterface` (any
+  `RuntimeException` still counts unless
+  `koh_agent.cart_handoff.runtime_exception_is_refusal` is off).
 - **Firewall.** `/api/agent/` must not start a session (see the agent-public
   firewall in the installation); `/acp-cart/` must run in the shop firewall so
   the buyer's session and login apply.

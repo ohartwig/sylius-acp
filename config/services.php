@@ -27,6 +27,7 @@ use Koh\SyliusAcp\ProductFeed\DoctrineCatalogueStream;
 use Koh\SyliusAcp\ProductFeed\FeedPusher;
 use Koh\SyliusAcp\ProductFeed\FeedScopeFactory;
 use Koh\SyliusAcp\ProductFeed\JsonlFeedWriter;
+use Koh\SyliusAgentContracts\Cart\CartHandoff;
 use Koh\SyliusAgentContracts\Context\AgentContextFactoryInterface;
 use Koh\SyliusAgentContracts\Http\AgentJsonResponder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
@@ -124,12 +125,7 @@ return static function (ContainerConfigurator $container): void {
         ->args([
             service(AgentCartStore::class),
             service(AgentContextFactoryInterface::class),
-            service('sylius.context.cart'),
-            service('sylius.factory.order_item'),
-            service('sylius.modifier.order_item_quantity'),
-            service('sylius.factory.add_to_cart_command'),
-            service('event_dispatcher'),
-            service('sylius.manager.order'),
+            service(CartHandoff::class),
             service('router'),
             param('koh_acp.carts.enabled'),
             param('koh_acp.carts.handoff_route'),
