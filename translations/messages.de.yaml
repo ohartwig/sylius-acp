@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Kai Ole Hartwig
+# SPDX-License-Identifier: MIT
+koh_acp:
+    cart_handoff:
+        added: 'Die von Ihrem Assistenten ausgewählten Artikel liegen jetzt in Ihrem Warenkorb.'
+        blocked: 'Der Warenkorb Ihres Assistenten konnte noch nicht übernommen werden. Bitte folgen Sie dem Hinweis des Shops (zum Beispiel der Altersbestätigung) und öffnen Sie den Link danach erneut.'
+        expired: 'Dieser Warenkorb-Link ist abgelaufen. Ihr Assistent kann den Warenkorb neu zusammenstellen.'

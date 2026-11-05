@@ -48,6 +48,77 @@ final class KohSyliusAcpBundleTest extends TestCase
         self::assertTrue($this->loadExtension(['checkout' => true])->getParameter('koh_acp.checkout'));
     }
 
+    public function testCartsAreOffUntilSwitchedOnWithUsableDefaults(): void
+    {
+        $carts = $this->processConfig([])['carts'];
+
+        self::assertFalse($carts['enabled']);
+        self::assertSame('', $carts['bearer_token_hashes']);
+        self::assertSame(50, $carts['max_line_items']);
+        self::assertSame(99, $carts['max_quantity']);
+        self::assertSame(120, $carts['rate_limit']);
+        self::assertSame('1 minute', $carts['rate_limit_interval']);
+        self::assertSame('sylius_shop_cart_summary', $carts['handoff_route']);
+        self::assertSame('sylius_shop_homepage', $carts['fallback_route']);
+
+        $builder = $this->loadExtension([]);
+        self::assertFalse($builder->getParameter('koh_acp.carts.enabled'));
+        self::assertSame('', $builder->getParameter('koh_acp.carts.bearer_token_hashes'));
+        self::assertSame(50, $builder->getParameter('koh_acp.carts.max_line_items'));
+        self::assertSame(99, $builder->getParameter('koh_acp.carts.max_quantity'));
+        self::assertSame(120, $builder->getParameter('koh_acp.carts.rate_limit'));
+        self::assertSame('1 minute', $builder->getParameter('koh_acp.carts.rate_limit_interval'));
+        self::assertSame('sylius_shop_cart_summary', $builder->getParameter('koh_acp.carts.handoff_route'));
+        self::assertSame('sylius_shop_homepage', $builder->getParameter('koh_acp.carts.fallback_route'));
+    }
+
+    public function testCartLimitsMustBePositive(): void
+    {
+        foreach (['max_line_items', 'max_quantity', 'rate_limit'] as $key) {
+            self::assertSame(1, $this->processConfig([['carts' => [$key => 1]]])['carts'][$key]);
+            try {
+                $this->processConfig([['carts' => [$key => 0]]]);
+                self::fail($key.' accepted 0');
+            } catch (\Symfony\Component\Config\Definition\Exception\InvalidConfigurationException) {
+                $this->addToAssertionCount(1);
+            }
+        }
+    }
+
+    public function testTheCartSettingsReachTheContainer(): void
+    {
+        $builder = $this->loadExtension(['carts' => [
+            'enabled' => true,
+            'bearer_token_hashes' => '%env(ACP_CART_TOKEN_HASHES)%',
+            'max_line_items' => 10,
+            'max_quantity' => 5,
+            'rate_limit' => 30,
+            'rate_limit_interval' => '10 seconds',
+            'handoff_route' => 'app_cart',
+            'fallback_route' => 'app_home',
+        ]]);
+
+        self::assertTrue($builder->getParameter('koh_acp.carts.enabled'));
+        self::assertSame('%env(ACP_CART_TOKEN_HASHES)%', $builder->getParameter('koh_acp.carts.bearer_token_hashes'));
+        self::assertSame(10, $builder->getParameter('koh_acp.carts.max_line_items'));
+        self::assertSame(5, $builder->getParameter('koh_acp.carts.max_quantity'));
+        self::assertSame(30, $builder->getParameter('koh_acp.carts.rate_limit'));
+        self::assertSame('10 seconds', $builder->getParameter('koh_acp.carts.rate_limit_interval'));
+        self::assertSame('app_cart', $builder->getParameter('koh_acp.carts.handoff_route'));
+        self::assertSame('app_home', $builder->getParameter('koh_acp.carts.fallback_route'));
+    }
+
+    public function testTheCartControllersAreRegistered(): void
+    {
+        $builder = $this->loadExtension([]);
+
+        foreach ([\Koh\SyliusAcp\Controller\CartController::class, \Koh\SyliusAcp\Controller\CartHandoffController::class] as $id) {
+            self::assertTrue($builder->hasDefinition($id), $id);
+            self::assertTrue($builder->getDefinition($id)->isPublic());
+            self::assertTrue($builder->getDefinition($id)->hasTag('controller.service_arguments'));
+        }
+    }
+
     public function testThePathPointsAtThePackageRootWhereConfigLives(): void
     {
         $path = (new KohSyliusAcpBundle())->getPath();

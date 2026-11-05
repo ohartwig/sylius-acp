@@ -13,7 +13,8 @@ use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigura
 use Symfony\Component\HttpKernel\Bundle\AbstractBundle;
 
 /**
- * ACP discovery and the agent-facing product feed.
+ * ACP discovery, the ACP cart service with its buyer handoff, and the
+ * agent-facing product feed.
  */
 final class KohSyliusAcpBundle extends AbstractBundle
 {
@@ -36,7 +37,34 @@ final class KohSyliusAcpBundle extends AbstractBundle
                 ->end()
                 ->booleanNode('checkout')
                     ->defaultFalse()
-                    ->info('Declare that this installation serves ACP checkout sessions under api_base; the bundle does not implement them. Off, /.well-known/acp.json answers 404 (no ACP service). An agent reading checkout will try to complete a purchase through the API.')
+                    ->info('Declare that this installation serves ACP checkout sessions under api_base itself; this bundle does not implement them. An agent reading checkout will try to complete a purchase through the API.')
+                ->end()
+                ->arrayNode('carts')
+                    ->info('The ACP cart service, implemented by this bundle. With neither carts nor checkout on, /.well-known/acp.json answers 404 (no ACP service).')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->booleanNode('enabled')->defaultFalse()->end()
+                        ->scalarNode('bearer_token_hashes')
+                            ->defaultValue('')
+                            ->info('SHA-256 hex digests of the API keys issued to agent platforms, separated by commas or whitespace. Use an env var: %env(ACP_CART_TOKEN_HASHES)%.')
+                        ->end()
+                        ->integerNode('max_line_items')->defaultValue(50)->min(1)->end()
+                        ->integerNode('max_quantity')->defaultValue(99)->min(1)->end()
+                        ->integerNode('rate_limit')
+                            ->defaultValue(120)
+                            ->min(1)
+                            ->info('Requests per API key and rate_limit_interval.')
+                        ->end()
+                        ->scalarNode('rate_limit_interval')->defaultValue('1 minute')->end()
+                        ->scalarNode('handoff_route')
+                            ->defaultValue('sylius_shop_cart_summary')
+                            ->info('Where continue_url lands the buyer once the cart is theirs.')
+                        ->end()
+                        ->scalarNode('fallback_route')
+                            ->defaultValue('sylius_shop_homepage')
+                            ->info('Where continue_url lands the buyer when the cart expired or a shop gate refused it.')
+                        ->end()
+                    ->end()
                 ->end()
                 ->integerNode('age_restriction')
                     ->defaultNull()
@@ -63,11 +91,20 @@ final class KohSyliusAcpBundle extends AbstractBundle
     public function loadExtension(array $config, ContainerConfigurator $container, ContainerBuilder $builder): void
     {
         $feed = \is_array($config['feed'] ?? null) ? $config['feed'] : [];
+        $carts = \is_array($config['carts'] ?? null) ? $config['carts'] : [];
 
         $builder->setParameter('koh_acp.version', (string) ($config['version'] ?? '2026-04-17'));
         $builder->setParameter('koh_acp.api_base', (string) ($config['api_base'] ?? '/api/agent'));
         $builder->setParameter('koh_acp.checkout', (bool) ($config['checkout'] ?? false));
         $builder->setParameter('koh_acp.age_restriction', $config['age_restriction'] ?? null);
+        $builder->setParameter('koh_acp.carts.enabled', (bool) ($carts['enabled'] ?? false));
+        $builder->setParameter('koh_acp.carts.bearer_token_hashes', $carts['bearer_token_hashes'] ?? '');
+        $builder->setParameter('koh_acp.carts.max_line_items', (int) ($carts['max_line_items'] ?? 50));
+        $builder->setParameter('koh_acp.carts.max_quantity', (int) ($carts['max_quantity'] ?? 99));
+        $builder->setParameter('koh_acp.carts.rate_limit', (int) ($carts['rate_limit'] ?? 120));
+        $builder->setParameter('koh_acp.carts.rate_limit_interval', (string) ($carts['rate_limit_interval'] ?? '1 minute'));
+        $builder->setParameter('koh_acp.carts.handoff_route', (string) ($carts['handoff_route'] ?? 'sylius_shop_cart_summary'));
+        $builder->setParameter('koh_acp.carts.fallback_route', (string) ($carts['fallback_route'] ?? 'sylius_shop_homepage'));
         $builder->setParameter('koh_acp.feed.default_limit', (int) ($feed['default_limit'] ?? 100));
         $builder->setParameter('koh_acp.feed.max_limit', (int) ($feed['max_limit'] ?? 500));
         $builder->setParameter('koh_acp.feed.max_page', (int) ($feed['max_page'] ?? 1000));
