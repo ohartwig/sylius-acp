@@ -1,3 +1,9 @@
+## [1.2.0](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/compare/v1.1.48...v1.2.0) (2026-11-05)
+
+### :sparkles: Features
+
+* **carts:** implement the ACP cart service with a buyer handoff ([d85acc3](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/commit/d85acc361667fc8bd34c84ff80f8e56d258229b4))
+
 ## [1.1.48](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/compare/v1.1.47...v1.1.48) (2026-11-05)
 
 ### :repeat: Chores
