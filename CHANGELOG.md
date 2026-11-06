@@ -1,3 +1,9 @@
+## [1.3.2](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/compare/v1.3.1...v1.3.2) (2026-11-06)
+
+### :bug: Fixes
+
+* **deps:** update dependency symfony/http-client-contracts to ^3.8.1 ([f65362f](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/commit/f65362fa43e0865de722ab289ad30127c1ca19db))
+
 ## [1.3.1](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/compare/v1.3.0...v1.3.1) (2026-11-06)
 
 ### :bug: Fixes
