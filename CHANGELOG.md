@@ -1,3 +1,13 @@
+## [1.3.1](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/compare/v1.3.0...v1.3.1) (2026-11-06)
+
+### :bug: Fixes
+
+* **handoff:** release the switch to the shared CartHandoff ([7f4bb2a](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/commit/7f4bb2acbee550ad2191c0f3b126fe5308ae4001))
+
+### :zap: Refactor
+
+* **handoff:** use the shared CartHandoff from koh/sylius-agent-contracts ([3417570](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/commit/34175708d251c127b8129ebfccc9e1bd03186c73))
+
 ## [1.3.0](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/compare/v1.2.1...v1.3.0) (2026-11-05)
 
 ### :sparkles: Features
