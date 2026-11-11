@@ -1,3 +1,9 @@
+## [1.3.5](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/compare/v1.3.4...v1.3.5) (2026-11-11)
+
+### :repeat: Chores
+
+* **deps:** update dependency opis/json-schema to ^2.6.2 ([33bd797](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/commit/33bd7972be33f043f8ea7e8eb7bf0d6049a5e8f1))
+
 ## [1.3.4](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/compare/v1.3.3...v1.3.4) (2026-11-08)
 
 ### :repeat: Chores
