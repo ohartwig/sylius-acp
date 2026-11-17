@@ -1,3 +1,9 @@
+## [1.3.8](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/compare/v1.3.7...v1.3.8) (2026-11-17)
+
+### :bug: Fixes
+
+* **composer:** point homepage at the package page ([9e6ec05](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/commit/9e6ec05aba57f3f39054869c682eed51769b1ec4))
+
 ## [1.3.7](https://git.ole-hartwig.eu/ai-ready-platform/platform/sylius-acp/compare/v1.3.6...v1.3.7) (2026-11-17)
 
 ### :repeat: Chores
